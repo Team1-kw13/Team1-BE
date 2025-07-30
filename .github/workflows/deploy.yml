@@ -1,0 +1,39 @@
+name: Deploy to EC2
+
+on:
+    push:
+        branches: [main]
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout source code
+              uses: actions/checkout@v3
+
+            - name: Decrypt .env.enc file
+              run: |
+                  openssl aes-256-cbc -d -in env.enc -out .env -pbkdf2 -k "${{ secrets.ENV_SECRET_KEY }}"
+
+            - name: Rsync project to EC2
+              uses: burnett01/rsync-deployments@5.2
+              with:
+                  switches: -avzr --delete
+                  path: .
+                  remote_path: /home/ubuntu/Team1-BE
+                  remote_host: ${{ secrets.REMOTE_HOST }}
+                  remote_user: ubuntu
+                  remote_key: ${{ secrets.REMOTE_SSH_KEY }}
+
+            - name: SSH and deploy
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.REMOTE_HOST }}
+                  username: ubuntu
+                  key: ${{ secrets.REMOTE_SSH_KEY }}
+                  script: |
+                      cd /home/ubuntu/Team1-BE
+                      docker-compose down
+                      docker-compose build --no-cache
+                      docker-compose up -d
