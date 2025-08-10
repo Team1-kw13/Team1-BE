@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>LLM Service Test</title>
+        <style>
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f5f7fa;
+            }
+            .container {
+                background: white;
+                border-radius: 10px;
+                padding: 30px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            h1 {
+                color: #2c3e50;
+                text-align: center;
+                margin-bottom: 30px;
+            }
+            .section {
+                margin-bottom: 30px;
+                padding: 20px;
+                border: 1px solid #e1e8ed;
+                border-radius: 8px;
+                background-color: #fafbfc;
+            }
+            .section h2 {
+                color: #34495e;
+                margin-top: 0;
+                margin-bottom: 15px;
+                font-size: 18px;
+            }
+            .controls {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                align-items: center;
+                margin-bottom: 15px;
+            }
+            input[type="text"],
+            textarea {
+                flex: 1;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                font-size: 14px;
+                min-width: 200px;
+            }
+            textarea {
+                min-height: 80px;
+                resize: vertical;
+            }
+            button {
+                padding: 10px 20px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 500;
+                transition: background-color 0.2s;
+            }
+            .btn-primary {
+                background-color: #3498db;
+                color: white;
+            }
+            .btn-primary:hover {
+                background-color: #2980b9;
+            }
+            .btn-success {
+                background-color: #27ae60;
+                color: white;
+            }
+            .btn-success:hover {
+                background-color: #229954;
+            }
+            .btn-warning {
+                background-color: #f39c12;
+                color: white;
+            }
+            .btn-warning:hover {
+                background-color: #e67e22;
+            }
+            .btn-danger {
+                background-color: #e74c3c;
+                color: white;
+            }
+            .btn-danger:hover {
+                background-color: #c0392b;
+            }
+            .status {
+                padding: 10px;
+                border-radius: 5px;
+                margin-bottom: 15px;
+                font-weight: 500;
+            }
+            .status.connected {
+                background-color: #d5f4e6;
+                color: #27ae60;
+                border: 1px solid #27ae60;
+            }
+            .status.disconnected {
+                background-color: #fadbd8;
+                color: #e74c3c;
+                border: 1px solid #e74c3c;
+            }
+            .status.connecting {
+                background-color: #fdeaa7;
+                color: #f39c12;
+                border: 1px solid #f39c12;
+            }
+            .log {
+                background-color: #2c3e50;
+                color: #ecf0f1;
+                padding: 15px;
+                border-radius: 5px;
+                height: 300px;
+                overflow-y: auto;
+                font-family: "Courier New", monospace;
+                font-size: 12px;
+                line-height: 1.4;
+            }
+            .log-entry {
+                margin-bottom: 5px;
+                word-wrap: break-word;
+            }
+            .log-entry.info {
+                color: #3498db;
+            }
+            .log-entry.success {
+                color: #27ae60;
+            }
+            .log-entry.warning {
+                color: #f39c12;
+            }
+            .log-entry.error {
+                color: #e74c3c;
+            }
+            .session-info {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                margin-bottom: 15px;
+            }
+            .info-card {
+                background: white;
+                padding: 15px;
+                border-radius: 5px;
+                border-left: 4px solid #3498db;
+            }
+            .info-card h3 {
+                margin: 0 0 10px 0;
+                color: #2c3e50;
+                font-size: 14px;
+            }
+            .info-card p {
+                margin: 0;
+                color: #7f8c8d;
+                font-size: 16px;
+                font-weight: 500;
+            }
+            .quick-messages {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 10px;
+                margin-bottom: 15px;
+            }
+            .quick-msg {
+                background-color: #ecf0f1;
+                border: 1px solid #bdc3c7;
+                padding: 8px 12px;
+                border-radius: 5px;
+                cursor: pointer;
+                text-align: center;
+                font-size: 13px;
+                transition: background-color 0.2s;
+            }
+            .quick-msg:hover {
+                background-color: #d5dbdb;
+            }
+            .response-area {
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                padding: 15px;
+                min-height: 100px;
+                margin-top: 10px;
+            }
+            .loading {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                border: 3px solid #f3f3f3;
+                border-top: 3px solid #3498db;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🤖 LLM Service 테스트 화면</h1>
+
+            <!-- 연결 상태 -->
+            <div class="section">
+                <h2>📡 웹소켓 연결</h2>
+                <div id="connectionStatus" class="status disconnected">
+                    연결 끊김
+                </div>
+                <div class="controls">
+                    <input
+                        type="text"
+                        id="sessionId"
+                        placeholder="세션 ID (예: test-session-1)"
+                        value="test-session-1"
+                    />
+                    <button id="connectBtn" class="btn-primary">연결</button>
+                    <button id="disconnectBtn" class="btn-danger" disabled>
+                        연결 끊기
+                    </button>
+                </div>
+            </div>
+
+            <!-- 세션 정보 -->
+            <div class="section">
+                <h2>📊 세션 정보</h2>
+                <div class="session-info">
+                    <div class="info-card">
+                        <h3>세션 ID</h3>
+                        <p id="currentSessionId">-</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>상태</h3>
+                        <p id="sessionStatus">비활성</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>일시정지</h3>
+                        <p id="pauseStatus">정상</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>메시지 수</h3>
+                        <p id="messageCount">0</p>
+                    </div>
+                </div>
+                <div class="controls">
+                    <button id="pauseBtn" class="btn-warning" disabled>
+                        일시정지
+                    </button>
+                    <button id="resumeBtn" class="btn-success" disabled>
+                        재개
+                    </button>
+                    <button id="sessionInfoBtn" class="btn-primary" disabled>
+                        세션 정보 조회
+                    </button>
+                </div>
+            </div>
+
+            <!-- 메시지 전송 -->
+            <div class="section">
+                <h2>💬 메시지 전송</h2>
+                <div class="quick-messages">
+                    <div
+                        class="quick-msg"
+                        data-msg="복지 혜택에 대해 알려주세요"
+                    >
+                        복지 혜택 문의
+                    </div>
+                    <div
+                        class="quick-msg"
+                        data-msg="의료비 지원은 어떻게 받나요?"
+                    >
+                        의료비 지원 문의
+                    </div>
+                    <div class="quick-msg" data-msg="주거 지원 정책이 있나요?">
+                        주거 지원 문의
+                    </div>
+                    <div
+                        class="quick-msg"
+                        data-msg="교육비 지원 제도가 궁금합니다"
+                    >
+                        교육비 지원 문의
+                    </div>
+                    <div
+                        class="quick-msg"
+                        data-msg="교통비 할인 혜택은 뭐가 있나요?"
+                    >
+                        교통비 할인 문의
+                    </div>
+                    <div
+                        class="quick-msg"
+                        data-msg="안녕하세요. 처음 이용합니다."
+                    >
+                        인사말
+                    </div>
+                </div>
+                <div class="controls">
+                    <textarea
+                        id="messageInput"
+                        placeholder="메시지를 입력하세요..."
+                    ></textarea>
+                    <button id="sendBtn" class="btn-success" disabled>
+                        전송
+                    </button>
+                </div>
+                <div
+                    id="ragSources"
+                    style="margin-top: 10px; font-size: 12px; color: #7f8c8d"
+                ></div>
+                <div class="response-area" id="responseArea">
+                    <p style="color: #95a5a6; font-style: italic">
+                        응답이 여기에 표시됩니다...
+                    </p>
+                </div>
+            </div>
+
+            <!-- 이벤트 로그 -->
+            <div class="section">
+                <h2>📋 실시간 로그</h2>
+                <div class="controls">
+                    <button id="clearLogBtn" class="btn-warning">
+                        로그 지우기
+                    </button>
+                    <button id="exportLogBtn" class="btn-primary">
+                        로그 내보내기
+                    </button>
+                </div>
+                <div id="eventLog" class="log"></div>
+            </div>
+        </div>
+
+        <script>
+            class LLMTestClient {
+                constructor() {
+                    this.ws = null;
+                    this.currentSessionId = null;
+                    this.messageCount = 0;
+                    this.isPaused = false;
+                    this.currentResponse = "";
+
+                    this.initElements();
+                    this.bindEvents();
+                    this.log("🚀 LLM 테스트 클라이언트 초기화 완료", "success");
+                }
+
+                initElements() {
+                    this.elements = {
+                        sessionId: document.getElementById("sessionId"),
+                        connectBtn: document.getElementById("connectBtn"),
+                        disconnectBtn: document.getElementById("disconnectBtn"),
+                        connectionStatus:
+                            document.getElementById("connectionStatus"),
+                        currentSessionId:
+                            document.getElementById("currentSessionId"),
+                        sessionStatus: document.getElementById("sessionStatus"),
+                        pauseStatus: document.getElementById("pauseStatus"),
+                        messageCount: document.getElementById("messageCount"),
+                        pauseBtn: document.getElementById("pauseBtn"),
+                        resumeBtn: document.getElementById("resumeBtn"),
+                        sessionInfoBtn:
+                            document.getElementById("sessionInfoBtn"),
+                        messageInput: document.getElementById("messageInput"),
+                        sendBtn: document.getElementById("sendBtn"),
+                        ragSources: document.getElementById("ragSources"),
+                        responseArea: document.getElementById("responseArea"),
+                        eventLog: document.getElementById("eventLog"),
+                        clearLogBtn: document.getElementById("clearLogBtn"),
+                        exportLogBtn: document.getElementById("exportLogBtn"),
+                    };
+                }
+
+                bindEvents() {
+                    this.elements.connectBtn.addEventListener("click", () =>
+                        this.connect()
+                    );
+                    this.elements.disconnectBtn.addEventListener("click", () =>
+                        this.disconnect()
+                    );
+                    this.elements.pauseBtn.addEventListener("click", () =>
+                        this.pauseSession()
+                    );
+                    this.elements.resumeBtn.addEventListener("click", () =>
+                        this.resumeSession()
+                    );
+                    this.elements.sessionInfoBtn.addEventListener("click", () =>
+                        this.getSessionInfo()
+                    );
+                    this.elements.sendBtn.addEventListener("click", () =>
+                        this.sendMessage()
+                    );
+                    this.elements.clearLogBtn.addEventListener("click", () =>
+                        this.clearLog()
+                    );
+                    this.elements.exportLogBtn.addEventListener("click", () =>
+                        this.exportLog()
+                    );
+
+                    // 빠른 메시지 버튼들
+                    document.querySelectorAll(".quick-msg").forEach((btn) => {
+                        btn.addEventListener("click", (e) => {
+                            const message = e.target.getAttribute("data-msg");
+                            this.elements.messageInput.value = message;
+                            this.sendMessage();
+                        });
+                    });
+
+                    // Enter 키로 메시지 전송
+                    this.elements.messageInput.addEventListener(
+                        "keypress",
+                        (e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                this.sendMessage();
+                            }
+                        }
+                    );
+                }
+
+                connect() {
+                    const sessionId = this.elements.sessionId.value.trim();
+                    if (!sessionId) {
+                        alert("세션 ID를 입력해주세요.");
+                        return;
+                    }
+
+                    this.log(`🔗 세션 연결 시도: ${sessionId}`, "info");
+                    this.updateConnectionStatus("connecting");
+
+                    this.ws = new WebSocket("ws://localhost:3000/voice");
+                    this.currentSessionId = sessionId;
+
+                    this.ws.onopen = () => {
+                        this.log("✅ 웹소켓 연결 성공", "success");
+                        this.updateConnectionStatus("connected");
+
+                        // 세션 생성 요청
+                        this.sendWebSocketMessage("CREATE_SESSION", {
+                            sessionId: sessionId,
+                            sessionContext: "복지 상담 테스트 세션입니다.",
+                            audioContext: "웹 테스트 환경",
+                        });
+                    };
+
+                    this.ws.onmessage = (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+                            this.handleWebSocketMessage(data);
+                        } catch (error) {
+                            this.log(
+                                `❌ 메시지 파싱 오류: ${error.message}`,
+                                "error"
+                            );
+                        }
+                    };
+
+                    this.ws.onclose = () => {
+                        this.log("🔌 웹소켓 연결 종료", "warning");
+                        this.updateConnectionStatus("disconnected");
+                    };
+
+                    this.ws.onerror = (error) => {
+                        this.log(`❌ 웹소켓 오류: ${error}`, "error");
+                        this.updateConnectionStatus("disconnected");
+                    };
+                }
+
+                disconnect() {
+                    if (this.ws) {
+                        this.sendWebSocketMessage("CLOSE_SESSION", {
+                            sessionId: this.currentSessionId,
+                        });
+                        this.ws.close();
+                        this.ws = null;
+                    }
+                    this.currentSessionId = null;
+                    this.updateConnectionStatus("disconnected");
+                    this.log("🔌 연결 종료", "info");
+                }
+
+                sendWebSocketMessage(type, data) {
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        const message = { type, data };
+                        this.ws.send(JSON.stringify(message));
+                        this.log(`📤 전송: ${type}`, "info");
+                    }
+                }
+
+                handleWebSocketMessage(message) {
+                    const { type, data } = message;
+                    this.log(`📥 수신: ${type}`, "info");
+
+                    switch (type) {
+                        case "SESSION_CREATED":
+                            this.updateSessionInfo();
+                            this.log(
+                                `✅ 세션 생성 완료: ${data.sessionId}`,
+                                "success"
+                            );
+                            break;
+
+                        case "TEXT_DELTA":
+                            this.currentResponse += data.delta || "";
+                            this.updateResponseArea(
+                                this.currentResponse + " ⏳"
+                            );
+                            break;
+
+                        case "TEXT_DONE":
+                            this.updateResponseArea(this.currentResponse);
+                            this.log("✅ 텍스트 응답 완료", "success");
+                            this.currentResponse = "";
+                            this.messageCount++;
+                            this.updateSessionInfo();
+                            break;
+
+                        case "AUDIO_TRANSCRIPT_DONE":
+                            this.log(
+                                `🎤 음성 전사 완료: ${data.transcript}`,
+                                "info"
+                            );
+                            break;
+
+                        case "RAG_SOURCES":
+                            this.updateRAGSources(data.sources);
+                            break;
+
+                        case "SESSION_PAUSED":
+                            this.isPaused = true;
+                            this.updateSessionInfo();
+                            this.log("⏸️ 세션 일시정지", "warning");
+                            break;
+
+                        case "SESSION_RESUMED":
+                            this.isPaused = false;
+                            this.updateSessionInfo();
+                            this.log("▶️ 세션 재개", "success");
+                            break;
+
+                        case "SESSION_INFO":
+                            this.updateSessionInfoFromData(data);
+                            break;
+
+                        case "ERROR":
+                            this.log(`❌ 오류: ${data.message}`, "error");
+                            break;
+
+                        default:
+                            this.log(
+                                `📨 ${type}: ${JSON.stringify(data)}`,
+                                "info"
+                            );
+                    }
+                }
+
+                sendMessage() {
+                    const message = this.elements.messageInput.value.trim();
+                    if (
+                        !message ||
+                        !this.ws ||
+                        this.ws.readyState !== WebSocket.OPEN
+                    ) {
+                        return;
+                    }
+
+                    this.log(`💬 메시지 전송: "${message}"`, "info");
+                    this.currentResponse = "";
+                    this.updateResponseArea("⏳ 응답 대기 중...");
+
+                    this.sendWebSocketMessage("SEND_TEXT_MESSAGE", {
+                        sessionId: this.currentSessionId,
+                        message: message,
+                    });
+
+                    this.elements.messageInput.value = "";
+                }
+
+                pauseSession() {
+                    this.sendWebSocketMessage("PAUSE_SESSION", {
+                        sessionId: this.currentSessionId,
+                    });
+                }
+
+                resumeSession() {
+                    this.sendWebSocketMessage("RESUME_SESSION", {
+                        sessionId: this.currentSessionId,
+                    });
+                }
+
+                getSessionInfo() {
+                    this.sendWebSocketMessage("GET_SESSION_INFO", {
+                        sessionId: this.currentSessionId,
+                    });
+                }
+
+                updateConnectionStatus(status) {
+                    const statusElement = this.elements.connectionStatus;
+                    const isConnected = status === "connected";
+                    const isConnecting = status === "connecting";
+
+                    statusElement.className = `status ${status}`;
+                    statusElement.textContent = isConnecting
+                        ? "연결 중..."
+                        : isConnected
+                        ? "연결됨"
+                        : "연결 끊김";
+
+                    // 버튼 상태 업데이트
+                    this.elements.connectBtn.disabled =
+                        isConnected || isConnecting;
+                    this.elements.disconnectBtn.disabled = !isConnected;
+                    this.elements.pauseBtn.disabled = !isConnected;
+                    this.elements.resumeBtn.disabled = !isConnected;
+                    this.elements.sessionInfoBtn.disabled = !isConnected;
+                    this.elements.sendBtn.disabled = !isConnected;
+                }
+
+                updateSessionInfo() {
+                    this.elements.currentSessionId.textContent =
+                        this.currentSessionId || "-";
+                    this.elements.sessionStatus.textContent = this
+                        .currentSessionId
+                        ? "활성"
+                        : "비활성";
+                    this.elements.pauseStatus.textContent = this.isPaused
+                        ? "일시정지"
+                        : "정상";
+                    this.elements.messageCount.textContent = this.messageCount;
+                }
+
+                updateSessionInfoFromData(data) {
+                    this.elements.sessionStatus.textContent = data.active
+                        ? "활성"
+                        : "비활성";
+                    this.elements.pauseStatus.textContent = data.paused
+                        ? "일시정지"
+                        : "정상";
+                    this.isPaused = data.paused;
+                }
+
+                updateResponseArea(content) {
+                    this.elements.responseArea.innerHTML =
+                        content ||
+                        '<p style="color: #95a5a6; font-style: italic;">응답이 여기에 표시됩니다...</p>';
+                }
+
+                updateRAGSources(sources) {
+                    if (sources && sources.length > 0) {
+                        this.elements.ragSources.innerHTML = `🔍 RAG 출처: ${sources.join(
+                            ", "
+                        )}`;
+                    } else {
+                        this.elements.ragSources.innerHTML = "";
+                    }
+                }
+
+                log(message, type = "info") {
+                    const logEntry = document.createElement("div");
+                    logEntry.className = `log-entry ${type}`;
+                    logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+
+                    this.elements.eventLog.appendChild(logEntry);
+                    this.elements.eventLog.scrollTop =
+                        this.elements.eventLog.scrollHeight;
+                }
+
+                clearLog() {
+                    this.elements.eventLog.innerHTML = "";
+                }
+
+                exportLog() {
+                    const logText = Array.from(this.elements.eventLog.children)
+                        .map((entry) => entry.textContent)
+                        .join("\n");
+
+                    const blob = new Blob([logText], { type: "text/plain" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `llm-test-log-${new Date()
+                        .toISOString()
+                        .slice(0, 19)}.txt`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+            }
+
+            // 페이지 로드 시 테스트 클라이언트 초기화
+            document.addEventListener("DOMContentLoaded", () => {
+                new LLMTestClient();
+            });
+        </script>
+    </body>
+</html>

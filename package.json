@@ -21,11 +21,13 @@
     },
     "homepage": "https://github.com/Team1-kw13/Team1-BE#readme",
     "dependencies": {
+        "@openai/realtime-api-beta": "github:openai/openai-realtime-api-beta",
         "axios": "^1.11.0",
         "child_process": "^1.0.2",
         "cors": "^2.8.5",
         "dotenv": "^17.2.1",
         "express": "^5.1.0",
+        "openai": "^5.12.1",
         "swagger-jsdoc": "^6.2.8",
         "swagger-ui-express": "^5.0.1",
         "uuid": "^11.1.0",
