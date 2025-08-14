@@ -69,7 +69,8 @@ class LLMService extends EventEmitter {
                 voice: "alloy",
                 input_audio_format: "pcm16",
                 output_audio_format: "pcm16",
-                input_audio_transcription: null, // 전사 on/off는 pause/resume로 제어
+                input_audio_transcription: { model: "whisper-1" },
+                turn_detection: null,
                 temperature: 0.7,
                 max_response_output_tokens: 350,
                 tool_choice: "auto",
@@ -154,27 +155,6 @@ class LLMService extends EventEmitter {
         };
     }
 
-    // 전사 on/off
-    pauseSession(sessionId) {
-        const ws = this._needWs(sessionId);
-        this._send(ws, {
-            type: "session.update",
-            session: { input_audio_transcription: null },
-        });
-        const m = this.meta.get(sessionId) || {};
-        this.meta.set(sessionId, { ...m, paused: true });
-    }
-
-    resumeSession(sessionId) {
-        const ws = this._needWs(sessionId);
-        this._send(ws, {
-            type: "session.update",
-            session: { input_audio_transcription: { model: "whisper-1" } },
-        });
-        const m = this.meta.get(sessionId) || {};
-        this.meta.set(sessionId, { ...m, paused: false });
-    }
-
     // 텍스트 송신
     sendTextMessage(sessionId, text, { modalities = ["text"] } = {}) {
         const ws = this._needWs(sessionId);
@@ -248,56 +228,56 @@ class LLMService extends EventEmitter {
     }
 
     // RAG: 컨텍스트 축소, 캐시 5분, 동일 instructions면 업데이트 생략
-    async updateSessionWithRAG(
-        sessionId,
-        query,
-        sessionContext = "",
-        audioContext = ""
-    ) {
-        const ws = this._needWs(sessionId);
-        const normQuery = this._normalize(query);
+    // async updateSessionWithRAG(
+    //     sessionId,
+    //     query,
+    //     sessionContext = "",
+    //     audioContext = ""
+    // ) {
+    //     const ws = this._needWs(sessionId);
+    //     const normQuery = this._normalize(query);
 
-        const cached = this.ragCache.get(sessionId);
-        if (
-            cached &&
-            cached.query === normQuery &&
-            Date.now() - cached.ts < this.ragCacheMs
-        ) {
-            const newInstr = this._buildSystemPrompt(
-                cached.ragContext,
-                sessionContext,
-                audioContext
-            );
-            await this._maybeUpdateInstructions(ws, sessionId, newInstr);
-            return { ragContext: cached.ragContext, sources: cached.sources };
-        }
+    //     const cached = this.ragCache.get(sessionId);
+    //     if (
+    //         cached &&
+    //         cached.query === normQuery &&
+    //         Date.now() - cached.ts < this.ragCacheMs
+    //     ) {
+    //         const newInstr = this._buildSystemPrompt(
+    //             cached.ragContext,
+    //             sessionContext,
+    //             audioContext
+    //         );
+    //         await this._maybeUpdateInstructions(ws, sessionId, newInstr);
+    //         return { ragContext: cached.ragContext, sources: cached.sources };
+    //     }
 
-        const results = await ragService.searchVectorDB(normQuery, {
-            topK: 2,
-            threshold: 0.3,
-            maxChars: 200,
-        });
-        const ragContext = ragService.formatContextForLLM(results);
-        const sources = results.map(
-            (r) => r.metadata?.file_id || r.metadata?.source || "vector_store"
-        );
+    //     const results = await ragService.searchVectorDB(normQuery, {
+    //         topK: 2,
+    //         threshold: 0.3,
+    //         maxChars: 200,
+    //     });
+    //     const ragContext = ragService.formatContextForLLM(results);
+    //     const sources = results.map(
+    //         (r) => r.metadata?.file_id || r.metadata?.source || "vector_store"
+    //     );
 
-        this.ragCache.set(sessionId, {
-            query: normQuery,
-            ragContext,
-            sources,
-            ts: Date.now(),
-        });
+    //     this.ragCache.set(sessionId, {
+    //         query: normQuery,
+    //         ragContext,
+    //         sources,
+    //         ts: Date.now(),
+    //     });
 
-        const newInstr = this._buildSystemPrompt(
-            ragContext,
-            sessionContext,
-            audioContext
-        );
-        await this._maybeUpdateInstructions(ws, sessionId, newInstr);
+    //     const newInstr = this._buildSystemPrompt(
+    //         ragContext,
+    //         sessionContext,
+    //         audioContext
+    //     );
+    //     await this._maybeUpdateInstructions(ws, sessionId, newInstr);
 
-        return { ragContext, sources };
-    }
+    //     return { ragContext, sources };
+    // }
 
     // 내부 유틸
     _needWs(sessionId) {
