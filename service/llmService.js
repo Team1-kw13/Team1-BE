@@ -2,7 +2,7 @@ const WebSocket = require("ws");
 const EventEmitter = require("events");
 const ragService = require("./ragService");
 
-// 실서비스용: 최신 리얼타임 모델로 교체 가능
+// 모델/엔드포인트
 const REALTIME_MODEL = "gpt-4o-realtime-preview-2024-12-17";
 const REALTIME_URL = `wss://api.openai.com/v1/realtime?model=${REALTIME_MODEL}`;
 const OPENAI_HEADERS = {
@@ -14,19 +14,25 @@ class LLMService extends EventEmitter {
     constructor() {
         super();
         this.clients = new Map(); // sessionId -> WebSocket
-        this.meta = new Map(); // sessionId -> { paused, createdAt, lastPing }
-        this.socketHandler = null; // 외부 WS로 이벤트 중계
+        this.meta = new Map(); // sessionId -> { paused, createdAt, lastPing, lastInstrHash }
+        this.socketHandler = null;
         this.ragCache = new Map(); // sessionId -> { query, ragContext, sources, ts }
-        this.maxRagChars = 3000;
-        this.keepaliveMs = 20_000; // ping 주기
+
+        this.maxRagChars = 1200;
+        this.keepaliveMs = 20_000;
+        this.ragCacheMs = 5 * 60_000;
+
+        this.fcalls = new Map(); // sessionId -> Map(call_id -> { name, args })
+        this.lastToolAt = new Map(); // sessionId -> ts
+        this.minToolIntervalMs = 1200; // 연속 호출 제한
+        this.lowConfidenceCount = new Map(); // sessionId -> 저신뢰도 발생 횟수
     }
 
-    // ---------- 공용 훅 ----------
     setSocketHandler(socket) {
         this.socketHandler = socket;
     }
 
-    // ---------- 세션 ----------
+    // 세션 생성: 전사 꺼둠, 출력 토큰 제한 축소, 기본 모달리티 텍스트 위주, tools 등록
     async createRealtimeSession(
         sessionId,
         sessionContext = "",
@@ -55,6 +61,7 @@ class LLMService extends EventEmitter {
             sessionContext,
             audioContext
         );
+
         this._send(ws, {
             type: "session.update",
             session: {
@@ -63,9 +70,45 @@ class LLMService extends EventEmitter {
                 input_audio_format: "pcm16",
                 output_audio_format: "pcm16",
                 input_audio_transcription: { model: "whisper-1" },
-                turn_detection: { type: "server_vad" },
+                turn_detection: null,
                 temperature: 0.7,
-                max_response_output_tokens: 1000,
+                max_response_output_tokens: 350,
+                tool_choice: "auto",
+                tools: [
+                    {
+                        type: "function",
+                        name: "rag_search",
+                        description:
+                            "사용자 발화에서 필요한 경우 관련 문서를 검색해 간결한 컨텍스트를 제공한다.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                query: {
+                                    type: "string",
+                                    description: "검색 질의 문장",
+                                },
+                                mode: {
+                                    type: "string",
+                                    enum: ["provisional", "final"],
+                                    description: "중간/최종 호출 모드",
+                                },
+                                topK: {
+                                    type: "integer",
+                                    minimum: 1,
+                                    maximum: 5,
+                                    default: 2,
+                                },
+                                threshold: {
+                                    type: "number",
+                                    minimum: 0,
+                                    maximum: 1,
+                                    default: 0.3,
+                                },
+                            },
+                            required: ["query"],
+                        },
+                    },
+                ],
             },
         });
 
@@ -79,7 +122,12 @@ class LLMService extends EventEmitter {
         ws.on("close", () => clearInterval(ping));
 
         this.clients.set(sessionId, ws);
-        this.meta.set(sessionId, { createdAt: Date.now(), paused: false });
+        this.meta.set(sessionId, {
+            createdAt: Date.now(),
+            paused: false,
+            lastInstrHash: this._hash(baseInstructions),
+        });
+        this.fcalls.set(sessionId, new Map());
         return ws;
     }
 
@@ -91,6 +139,9 @@ class LLMService extends EventEmitter {
             } catch {}
             this.clients.delete(sessionId);
             this.meta.delete(sessionId);
+            this.fcalls.delete(sessionId);
+            this.lastToolAt.delete(sessionId);
+            this.lowConfidenceCount.delete(sessionId);
         }
     }
 
@@ -104,29 +155,7 @@ class LLMService extends EventEmitter {
         };
     }
 
-    pauseSession(sessionId) {
-        const ws = this._needWs(sessionId);
-        this._send(ws, {
-            type: "session.update",
-            session: { input_audio_transcription: null, turn_detection: null },
-        });
-        const m = this.meta.get(sessionId) || {};
-        this.meta.set(sessionId, { ...m, paused: true });
-    }
-
-    resumeSession(sessionId) {
-        const ws = this._needWs(sessionId);
-        this._send(ws, {
-            type: "session.update",
-            session: {
-                input_audio_transcription: { model: "whisper-1" },
-                turn_detection: { type: "server_vad" },
-            },
-        });
-        const m = this.meta.get(sessionId) || {};
-        this.meta.set(sessionId, { ...m, paused: false });
-    }
-
+    // 텍스트 송신
     sendTextMessage(sessionId, text, { modalities = ["text"] } = {}) {
         const ws = this._needWs(sessionId);
         this._send(ws, {
@@ -147,9 +176,11 @@ class LLMService extends EventEmitter {
 
             const onDelta = (e) => {
                 const data = safeParse(e);
-                if (data?.type === "response.text.delta") {
-                    if (typeof data.delta === "string") acc += data.delta;
-                }
+                if (
+                    data?.type === "response.text.delta" &&
+                    typeof data.delta === "string"
+                )
+                    acc += data.delta;
             };
             const onDone = (e) => {
                 const data = safeParse(e);
@@ -178,26 +209,7 @@ class LLMService extends EventEmitter {
         });
     }
 
-    // ---------- 오디오 ----------
-    // 음성 한 방에!!
-    sendFullAudioMessage(
-        sessionId,
-        base64Audio,
-        { modalities = ["audio", "text"] } = {}
-    ) {
-        const ws = this._needWs(sessionId);
-        this._send(ws, {
-            type: "conversation.item.create",
-            item: {
-                type: "message",
-                role: "user",
-                content: [{ type: "input_audio", audio: base64Audio }],
-            },
-        });
-        this._send(ws, { type: "response.create", response: { modalities } });
-    }
-
-    // 스트리밍(append/commit) 경로
+    // 오디오 입력 버퍼
     appendAudioChunk(sessionId, base64Pcm16Chunk) {
         const ws = this._needWs(sessionId);
         this._send(ws, {
@@ -205,10 +217,7 @@ class LLMService extends EventEmitter {
             audio: base64Pcm16Chunk,
         });
     }
-    commitAudioAndCreateResponse(
-        sessionId,
-        { modalities = ["audio", "text"] } = {}
-    ) {
+    commitAudioAndCreateResponse(sessionId, { modalities = ["text"] } = {}) {
         const ws = this._needWs(sessionId);
         this._send(ws, { type: "input_audio_buffer.commit" });
         this._send(ws, { type: "response.create", response: { modalities } });
@@ -218,63 +227,59 @@ class LLMService extends EventEmitter {
         this._send(ws, { type: "input_audio_buffer.clear" });
     }
 
-    // ---------- RAG ----------
-    async updateSessionWithRAG(
-        sessionId,
-        query,
-        sessionContext = "",
-        audioContext = ""
-    ) {
-        const ws = this._needWs(sessionId);
+    // RAG: 컨텍스트 축소, 캐시 5분, 동일 instructions면 업데이트 생략
+    // async updateSessionWithRAG(
+    //     sessionId,
+    //     query,
+    //     sessionContext = "",
+    //     audioContext = ""
+    // ) {
+    //     const ws = this._needWs(sessionId);
+    //     const normQuery = this._normalize(query);
 
-        // 1분 캐시
-        const cached = this.ragCache.get(sessionId);
-        if (
-            cached &&
-            cached.query === query &&
-            Date.now() - cached.ts < 60_000
-        ) {
-            this._send(ws, {
-                type: "session.update",
-                session: {
-                    instructions: this._buildSystemPrompt(
-                        cached.ragContext,
-                        sessionContext,
-                        audioContext
-                    ),
-                },
-            });
-            return { ragContext: cached.ragContext, sources: cached.sources };
-        }
+    //     const cached = this.ragCache.get(sessionId);
+    //     if (
+    //         cached &&
+    //         cached.query === normQuery &&
+    //         Date.now() - cached.ts < this.ragCacheMs
+    //     ) {
+    //         const newInstr = this._buildSystemPrompt(
+    //             cached.ragContext,
+    //             sessionContext,
+    //             audioContext
+    //         );
+    //         await this._maybeUpdateInstructions(ws, sessionId, newInstr);
+    //         return { ragContext: cached.ragContext, sources: cached.sources };
+    //     }
 
-        const results = await ragService.searchVectorDB(query);
-        const ragContext = ragService.formatContextForLLM(results);
-        const sources = results.map(
-            (r) => r.metadata?.file_id || r.metadata?.source || "vector_store"
-        );
+    //     const results = await ragService.searchVectorDB(normQuery, {
+    //         topK: 2,
+    //         threshold: 0.3,
+    //         maxChars: 200,
+    //     });
+    //     const ragContext = ragService.formatContextForLLM(results);
+    //     const sources = results.map(
+    //         (r) => r.metadata?.file_id || r.metadata?.source || "vector_store"
+    //     );
 
-        this.ragCache.set(sessionId, {
-            query,
-            ragContext,
-            sources,
-            ts: Date.now(),
-        });
+    //     this.ragCache.set(sessionId, {
+    //         query: normQuery,
+    //         ragContext,
+    //         sources,
+    //         ts: Date.now(),
+    //     });
 
-        this._send(ws, {
-            type: "session.update",
-            session: {
-                instructions: this._buildSystemPrompt(
-                    ragContext,
-                    sessionContext,
-                    audioContext
-                ),
-            },
-        });
+    //     const newInstr = this._buildSystemPrompt(
+    //         ragContext,
+    //         sessionContext,
+    //         audioContext
+    //     );
+    //     await this._maybeUpdateInstructions(ws, sessionId, newInstr);
 
-        return { ragContext, sources };
-    }
+    //     return { ragContext, sources };
+    // }
 
-    // ---------- 내부 유틸 ----------
+    // 내부 유틸
     _needWs(sessionId) {
         const ws = this.clients.get(sessionId);
         if (!ws || ws.readyState !== WebSocket.OPEN)
@@ -288,15 +293,26 @@ class LLMService extends EventEmitter {
         ws.send(JSON.stringify(payload));
     }
 
+    async _maybeUpdateInstructions(ws, sessionId, newInstr) {
+        const m = this.meta.get(sessionId) || {};
+        const newHash = this._hash(newInstr);
+        if (m.lastInstrHash !== newHash) {
+            this._send(ws, {
+                type: "session.update",
+                session: { instructions: newInstr },
+            });
+            this.meta.set(sessionId, { ...m, lastInstrHash: newHash });
+        }
+    }
+
     _wireServerEvents(ws, sessionId) {
-        ws.on("message", (msg) => {
+        ws.on("message", async (msg) => {
             const data = safeParse(msg);
             if (!data) return;
 
-            // 원본 이벤트 그대로도 중계
             this._emit("realtime.raw", { sessionId, data });
 
-            // 텍스트/오디오 델타, 완료, 전사 등 주요 이벤트 축약 중계
+            // 텍스트/오디오 응답 스트림
             if (data.type === "response.text.delta")
                 this._emit("text_delta", {
                     sessionId,
@@ -324,6 +340,8 @@ class LLMService extends EventEmitter {
                     sessionId,
                     response: data.response,
                 });
+
+            // 전사 스트림
             if (data.type === "response.audio_transcript.delta")
                 this._emit("audio_transcript_delta", {
                     sessionId,
@@ -336,6 +354,50 @@ class LLMService extends EventEmitter {
                     transcript: data.transcript,
                     output_index: data.output_index,
                 });
+
+            // 함수 호출 인자 스트리밍
+            if (data.type === "response.function_call.arguments.delta") {
+                const calls = this.fcalls.get(sessionId) || new Map();
+                const prev = calls.get(data.call_id) || {
+                    name: data.name,
+                    args: "",
+                };
+                prev.args += data.delta || "";
+                calls.set(data.call_id, prev);
+                this.fcalls.set(sessionId, calls);
+                return;
+            }
+
+            // 함수 호출 인자 완료 → 실제 툴 실행
+            if (data.type === "response.function_call.arguments.done") {
+                const calls = this.fcalls.get(sessionId) || new Map();
+                const info = calls.get(data.call_id);
+                if (!info) return;
+                let args = {};
+                try {
+                    args = info.args ? JSON.parse(info.args) : {};
+                } catch {}
+                calls.delete(data.call_id);
+                this.fcalls.set(sessionId, calls);
+
+                try {
+                    await this._handleToolCall(
+                        ws,
+                        sessionId,
+                        info.name,
+                        data.call_id,
+                        args
+                    );
+                } catch (err) {
+                    this._send(ws, {
+                        type: "tool.output",
+                        tool_call_id: data.call_id,
+                        output: JSON.stringify({ error: String(err) }),
+                    });
+                }
+                return;
+            }
+
             if (data.type === "error" || data.type === "response.error")
                 this._emit("error", { sessionId, error: data });
             if (data.type === "session.created")
@@ -360,11 +422,112 @@ class LLMService extends EventEmitter {
         );
     }
 
+    async _handleToolCall(ws, sessionId, name, callId, args) {
+        // 레이트리밋
+        const last = this.lastToolAt.get(sessionId) || 0;
+        if (Date.now() - last < this.minToolIntervalMs) {
+            this._send(ws, {
+                type: "tool.output",
+                tool_call_id: callId,
+                output: JSON.stringify({
+                    skipped: true,
+                    reason: "rate_limited",
+                }),
+            });
+            return;
+        }
+        this.lastToolAt.set(sessionId, Date.now());
+
+        if (name !== "rag_search") {
+            this._send(ws, {
+                type: "tool.output",
+                tool_call_id: callId,
+                output: JSON.stringify({ error: "unknown tool" }),
+            });
+            return;
+        }
+
+        const query = String(args.query || "").trim();
+        if (!query) {
+            this._send(ws, {
+                type: "tool.output",
+                tool_call_id: callId,
+                output: JSON.stringify({ error: "empty query" }),
+            });
+            return;
+        }
+
+        const mode = args.mode === "provisional" ? "provisional" : "final";
+        const topK = Number.isInteger(args.topK) ? args.topK : 2;
+        const threshold =
+            typeof args.threshold === "number" ? args.threshold : 0.3;
+
+        const opt =
+            mode === "provisional"
+                ? {
+                      topK: Math.min(topK, 1),
+                      threshold: Math.max(threshold, 0.4),
+                      maxChars: 120,
+                  }
+                : { topK, threshold, maxChars: 200 };
+
+        const results = await ragService.searchVectorDB(query, opt);
+
+        // 신뢰도 체크 - 결과가 없거나 가장 높은 점수가 threshold보다 낮으면 저신뢰도 메시지 반환
+        if (results.length === 0 || (results[0]?.score || 0) < threshold) {
+            // 저신뢰도 발생 횟수 증가
+            const currentCount = this.lowConfidenceCount.get(sessionId) || 0;
+            const newCount = currentCount + 1;
+            this.lowConfidenceCount.set(sessionId, newCount);
+
+            let message =
+                "관련 문서를 찾지 못했습니다. 질문을 다시 말씀해주세요.";
+
+            // 3회 이상 반복 시 담당자 안내 메시지
+            if (newCount >= 3) {
+                message =
+                    "관련 문서를 계속 찾지 못하고 있습니다. 내용을 요약해서 담당자에게 문의해주세요. 더 정확한 도움을 받으실 수 있습니다.";
+            }
+
+            this._send(ws, {
+                type: "tool.output",
+                tool_call_id: callId,
+                output: JSON.stringify({
+                    context: message,
+                    sources: [],
+                    count: 0,
+                    mode,
+                    lowConfidence: true,
+                    lowConfidenceCount: newCount,
+                }),
+            });
+            return;
+        }
+
+        // 성공적으로 검색된 경우 저신뢰도 카운터 리셋
+        this.lowConfidenceCount.set(sessionId, 0);
+
+        const context = ragService.formatContextForLLM(results);
+        const sources = results.map(
+            (r) => r.metadata?.file_id || r.metadata?.source || "vector_store"
+        );
+
+        // 세션 전역 instructions를 건드리지 않고, 한 턴 안에서만 활용하도록 tool.output 반환
+        this._send(ws, {
+            type: "tool.output",
+            tool_call_id: callId,
+            output: JSON.stringify({
+                context,
+                sources,
+                count: results.length,
+                mode,
+            }),
+        });
+    }
+
     _emit(event, payload) {
         super.emit(event, payload);
-        if (this.socketHandler?.emit) {
-            this.socketHandler.emit(event, payload);
-        }
+        if (this.socketHandler?.emit) this.socketHandler.emit(event, payload);
     }
 
     _truncate(s, max = this.maxRagChars) {
@@ -381,6 +544,20 @@ class LLMService extends EventEmitter {
         if (audioContext) p += `\n\n오디오 컨텍스트:\n${audioContext}`;
         p += `\n\n유의사항:\n1) 문서 기반으로 답하되 부족하면 상식으로 보완 2) 출처를 간단히 표기 3) 불확실하면 추정 금지`;
         return p;
+    }
+
+    _normalize(q) {
+        return String(q || "")
+            .trim()
+            .replace(/\s+/g, " ")
+            .toLowerCase();
+    }
+
+    _hash(str) {
+        let h = 5381,
+            i = str.length;
+        while (i) h = (h * 33) ^ str.charCodeAt(--i);
+        return (h >>> 0).toString(36);
     }
 }
 
