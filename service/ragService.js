@@ -40,7 +40,7 @@ class RAGService {
         });
 
         const resp = await openai.responses.parse({
-            model: "gpt-4o-mini",
+            model: "gpt-4.1-nano",
             tools: [
                 { type: "file_search", vector_store_ids: [VECTOR_STORE_ID] },
             ],

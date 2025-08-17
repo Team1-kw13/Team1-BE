@@ -3,7 +3,7 @@ const EventEmitter = require("events");
 const ragService = require("./ragService");
 
 // 모델/엔드포인트
-const REALTIME_MODEL = "gpt-4o-realtime-preview-2024-12-17";
+const REALTIME_MODEL = "gpt-4o-mini-realtime-preview";
 const REALTIME_URL = `wss://api.openai.com/v1/realtime?model=${REALTIME_MODEL}`;
 const OPENAI_HEADERS = {
     Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
