@@ -57,9 +57,9 @@ class Socket {
       ws.on("message", async (raw, isBinary) => {
         if (isBinary) {
           try {
-            const chunks = audioService.toBase64PcmChunks(raw);
-            for (const b64 of chunks)
+            audioService.toBase64PcmChunks(raw).forEach((b64) => {
               llmService.appendAudioChunk(sessionId, b64);
+            })
           } catch (e) {
             return this._sendError(
               ws,
@@ -201,7 +201,10 @@ class Socket {
           return;
         }
         const out = mapper(data);
-        if (out && ws.readyState === ws.OPEN) {
+        if (out.type == "response.audio.delta" && ws.readyState === ws.OPEN) {
+          const buf = audioService.fromBase64Pcm(out.delta)
+          ws.send(buf, { binary: true })
+        } else if (out && ws.readyState === ws.OPEN) {
           ws.send(JSON.stringify({ channel: "openai:conversation", ...out }));
         }
       };
