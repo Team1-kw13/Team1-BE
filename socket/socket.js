@@ -220,8 +220,12 @@ class Socket {
         }
         const out = mapper(data);
         if (out.type == "response.audio.delta" && ws.readyState === ws.OPEN) {
-          const buf = audioService.fromBase64Pcm(out.delta)
-          ws.send(buf, { binary: true })
+          try {
+            const buf = audioService.fromBase64Pcm(out.delta)
+            ws.send(buf, { binary: true })
+          } catch (e) {
+            this._sendError(ws, 502, `Upstream audio decode failed: ${e.message}`);
+          }
         } else if (out && ws.readyState === ws.OPEN) {
           ws.send(JSON.stringify({ channel: "openai:conversation", ...out }));
         }
