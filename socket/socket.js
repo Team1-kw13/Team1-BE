@@ -35,6 +35,7 @@ class Socket {
   constructor() {
     this.wss = null;
     this._hb = null;
+    this.sessions = new Map(); // sessionId -> { turnCount: number }
   }
 
   init(server) {
@@ -60,6 +61,7 @@ class Socket {
       // 연결당 1 세션
       const sessionId = genId("sonj");
       ws._sessionId = sessionId;
+      this.sessions.set(sessionId, { turnCount: 0 }); 
 
       try {
         await llmService.createRealtimeSession(
@@ -126,7 +128,8 @@ class Socket {
         this._cleanupLLMForwarding(ws);
         try {
           await llmService.closeSession(sessionId);
-        } catch {}
+        } catch { }
+        this.sessions.delete(sessionId);
       });
     });
 
@@ -165,6 +168,7 @@ class Socket {
     }
 
     if (type === "input_audio_buffer.end") {
+      this._addTurnCount(sessionId)
       try {
         llmService.commitAudioAndCreateResponse(sessionId, {
           modalities: ["text", "audio"],
@@ -176,6 +180,7 @@ class Socket {
     }
 
     if (type === "input_text") {
+      this._addTurnCount(sessionId)
       try {
         const text = String(msg.text ?? "");
         llmService.sendTextMessage(sessionId, text, {
@@ -188,6 +193,7 @@ class Socket {
     }
 
     if (type === "preprompted") {
+      this._addTurnCount(sessionId)
       const selected = msg.enum || "";
       return this._sendConv(ws, {
         type: "preprompted.done",
@@ -219,6 +225,8 @@ class Socket {
           return;
         }
         const out = mapper(data);
+        const s = this.sessions.get(sessionId);
+        const turn_index = s?.turnCount ?? 0;
         if (out.type == "response.audio.delta" && ws.readyState === ws.OPEN) {
           try {
             const buf = audioService.fromBase64Pcm(out.delta);
@@ -237,35 +245,55 @@ class Socket {
       ws._llmHandlers.push({ event, handler });
     };
 
-    fwd("text_delta", ({ output_index, delta }) => ({
-      type: "response.text.delta",
-      output_index,
-      delta,
-    }));
-    fwd("text_done", ({ output_index }) => ({
-      type: "response.text.done",
-      output_index,
-    }));
+    fwd("text_delta", ({ delta }) => {
+      const s = this.sessions.get(sessionId);
+      return {
+        type: "response.text.delta",
+        output_index: s?.turnCount ?? 0,
+        delta,
+      }
+    });
+    fwd("text_done", () => {
+      const s = this.sessions.get(sessionId);
+      return {
+        type: "response.text.done",
+        output_index: s?.turnCount ?? 0,
+      }
+    });
 
-    fwd("audio_transcript_delta", ({ output_index, delta }) => ({
-      type: "response.audio_transcript.delta",
-      output_index,
-      delta,
-    }));
-    fwd("audio_transcript_done", ({ output_index }) => ({
-      type: "response.audio_transcript.done",
-      output_index,
-    }));
+    fwd("audio_transcript_delta", ({ delta }) => {
+      const s = this.sessions.get(sessionId);
+      return {
+        type: "response.audio_transcript.delta",
+        output_index: s?.turnCount ?? 0,
+        delta,
+      }
+    });
 
-    fwd("audio_delta", ({ output_index, delta }) => ({
-      type: "response.audio.delta",
-      output_index,
-      delta,
-    }));
-    fwd("audio_done", ({ output_index }) => ({
-      type: "response.audio.done",
-      output_index,
-    }));
+    fwd("audio_transcript_done", () => {
+      const s = this.sessions.get(sessionId);
+      return {
+        type: "response.audio_transcript.done",
+        output_index: s?.turnCount ?? 0,
+      }
+    });
+
+    fwd("audio_delta", ({ delta }) => {
+      const s = this.sessions.get(sessionId);
+      return {
+        type: "response.audio.delta",
+        output_index: s?.turnCount ?? 0,
+        delta,
+      }
+    });
+
+    fwd("audio_done", () => {
+      const s = this.sessions.get(sessionId);
+      return {
+        type: "response.audio.done",
+        output_index: s?.turnCount ?? 0,
+      }
+    });
     
     const onErr = ({ sessionId: sid, error }) => {
       if (sid !== sessionId) {
@@ -294,6 +322,13 @@ class Socket {
     llmService.on("closed", onClosed);
     ws._llmHandlers.push({ event: "error", handler: onErr });
     ws._llmHandlers.push({ event: "closed", handler: onClosed });
+  }
+
+  _addTurnCount(sessionId) {
+    const s = this.sessions.get(sessionId);
+    if (s) {
+      s.turnCount += 1
+    };
   }
 
   _cleanupLLMForwarding(ws) {
