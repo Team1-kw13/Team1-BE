@@ -245,15 +245,17 @@ class Socket {
       output_index,
     }));
 
-    const onErr = ({ error }) =>
+    const onErr = ({ error }) => {
       this._sendError(
         ws,
         error?.code ?? 1011,
         error?.message ?? "Upstream error",
         { raw: error }
       );
-    const onClosed = ({ code, reason }) =>
-      this._sendError(ws, code ?? 1011, reason || "Upstream closed");
+    }
+    
+    const onClosed = ({ code, reason }) => this._sendError(ws, code ?? 1011, reason || "Upstream closed")
+    
     llmService.on("error", onErr);
     llmService.on("closed", onClosed);
     ws._llmHandlers.push({ event: "error", handler: onErr });
@@ -262,9 +264,9 @@ class Socket {
 
   _cleanupLLMForwarding(ws) {
     if (ws._llmHandlers) {
-      ws._llmHandlers.forEach(({ event, handler }) =>
+      ws._llmHandlers.forEach(({ event, handler }) => {
         llmService.removeListener(event, handler)
-      );
+      }); 
       ws._llmHandlers = [];
     }
   }
