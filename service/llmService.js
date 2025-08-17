@@ -430,7 +430,7 @@ class LLMService extends EventEmitter {
                         skipped: true,
                         reason: "rate_limited",
                     }),
-                }
+                },
             });
             this._send(ws, { type: "response.create" });
             return;
@@ -444,7 +444,7 @@ class LLMService extends EventEmitter {
                     type: "function_call_output",
                     call_id: callId,
                     output: JSON.stringify({ error: "unknown tool" }),
-                }
+                },
             });
             this._send(ws, { type: "response.create" });
             return;
@@ -508,7 +508,7 @@ class LLMService extends EventEmitter {
                         mode,
                         lowConfidence: true,
                         lowConfidenceCount: newCount,
-                    })
+                    }),
                 },
             });
             this._send(ws, { type: "response.create" });
@@ -535,7 +535,7 @@ class LLMService extends EventEmitter {
                     count: results.length,
                     mode,
                 }),
-            }
+            },
         });
         this._send(ws, { type: "response.create" });
     }
