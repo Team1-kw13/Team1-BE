@@ -2,11 +2,6 @@ const openai = require("../config/openai");
 
 const VECTOR_STORE_ID = "vs_6896108447848191b1aca6b1aff8310b";
 
-function truncate(s, max = 400) {
-    if (!s) return "";
-    return s.length > max ? s.slice(0, max) + "\n...[truncated]" : s;
-}
-
 class RAGService {
     async searchVectorDB(query, options = {}) {
         const { topK = 3, threshold = 0, maxChars = 400 } = options;
