@@ -23,7 +23,7 @@ class RAGService {
         const search_result = await openai.vectorStores.search(VECTOR_STORE_ID, {
             query: query,
             max_num_results: topK,
-            rewrite_query: true
+            rewrite_query: false,
         });
 
         const obj = {
