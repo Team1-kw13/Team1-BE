@@ -1,6 +1,7 @@
 const { Server: WebSocketServer } = require("ws");
 const llmService = require("../service/llmService");
 const audioService = require("../service/audioService");
+const summaryService = require("../service/summaryService");
 
 function safeParse(m) {
   try {
@@ -111,7 +112,7 @@ class Socket {
           return this._handleConversation(ws, sessionId, msg);
         }
         if (channel === "sonju:summarize") {
-          return this._handleSummarize(ws);
+          return this._handleSummarize(ws, sessionId);
         }
 
         // 수신 전용 채널은 클라 → 서버 요청 무시
@@ -205,16 +206,34 @@ class Socket {
   }
 
   // ====== summarize ======
-  _handleSummarize(ws) {
-    const onePx =
-      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8Xw8AAkMBg9CqTg0AAAAASUVORK5CYII=";
-    ws.send(
-      JSON.stringify({
-        channel: "sonju:summarize",
-        type: "summary.image",
-        image_base64: onePx,
-      })
-    );
+  async _handleSummarize(ws, sessionId) {
+    try {
+      // 실제 요약 생성
+      const report = await summaryService.generateSessionReport(
+        llmService, 
+        sessionId, 
+        { format: "image" }
+      );
+      
+      if (report.image && report.image.data) {
+        // Buffer를 base64로 변환
+        const base64Image = report.image.data.toString('base64');
+        
+        // 클라이언트에게 전송
+        ws.send(JSON.stringify({
+          channel: "sonju:summarize",
+          type: "summary.image",
+          image_base64: base64Image,
+          sessionId: sessionId,
+          timestamp: report.timestamp
+        }));
+      } else {
+        // 이미지 생성 실패
+        this._sendError(ws, 500, "요약 이미지 생성에 실패했습니다.");
+      }
+    } catch (error) {
+      this._sendError(ws, 500, `요약 생성 실패: ${error.message}`);
+    }
   }
 
   // ====== LLM event → client forwarding ======
