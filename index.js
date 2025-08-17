@@ -29,5 +29,5 @@ Socket.init(server);
 server.listen(PORT, () => {
   console.log(`서버가 http://localhost:${PORT} 에서 실행 중입니다.`);
   console.log(`테스트 페이지: http://localhost:${PORT}/test`);
-  console.log(`음성 WebSocket: ws://localhost:${PORT}/`);
+  console.log(`WebSocket: ws://localhost:${PORT}/`);
 });
