@@ -17,6 +17,7 @@ class Socket {
   constructor() {
     this.wss = null;
     this._hb = null;
+    this.sessions = new Map(); // sessionId -> { turnCount: number }
   }
 
   init(server) {
@@ -42,6 +43,7 @@ class Socket {
       // 연결당 1 세션
       const sessionId = genId("sonj");
       ws._sessionId = sessionId;
+      this.sessions.set(sessionId, { turnCount: 0 }); 
 
       try {
         await llmService.createRealtimeSession(
@@ -108,7 +110,8 @@ class Socket {
         this._cleanupLLMForwarding(ws);
         try {
           await llmService.closeSession(sessionId);
-        } catch {}
+        } catch { }
+        this.sessions.delete(sessionId);
       });
     });
 
@@ -147,6 +150,7 @@ class Socket {
     }
 
     if (type === "input_audio_buffer.end") {
+      _addTurnCount(sessionId)
       try {
         llmService.commitAudioAndCreateResponse(sessionId, {
           modalities: ["text", "audio"],
@@ -158,6 +162,7 @@ class Socket {
     }
 
     if (type === "input_text") {
+      _addTurnCount(sessionId)
       try {
         const text = String(msg.text ?? "");
         llmService.sendTextMessage(sessionId, text, {
@@ -170,6 +175,7 @@ class Socket {
     }
 
     if (type === "preprompted") {
+      _addTurnCount(sessionId)
       const selected = msg.enum || "";
       return this._sendConv(ws, {
         type: "preprompted.done",
@@ -258,6 +264,13 @@ class Socket {
     llmService.on("closed", onClosed);
     ws._llmHandlers.push({ event: "error", handler: onErr });
     ws._llmHandlers.push({ event: "closed", handler: onClosed });
+  }
+
+  _addTurnCount(sessionId) {
+    const s = this.sessions.get(sessionId);
+    if (s) {
+      s.turnCount += 1
+    };
   }
 
   _cleanupLLMForwarding(ws) {
