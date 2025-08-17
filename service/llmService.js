@@ -317,23 +317,23 @@ class LLMService extends EventEmitter {
                 this._emit("text_delta", {
                     sessionId,
                     delta: data.delta,
-                    output_index: data.output_index,
+                    // output_index: data.output_index,
                 });
             if (data.type === "response.text.done")
                 this._emit("text_done", {
                     sessionId,
-                    output_index: data.output_index,
+                    // output_index: data.output_index,
                 });
             if (data.type === "response.audio.delta")
                 this._emit("audio_delta", {
                     sessionId,
                     delta: data.delta,
-                    output_index: data.output_index,
+                    // output_index: data.output_index,
                 });
             if (data.type === "response.audio.done")
                 this._emit("audio_done", {
                     sessionId,
-                    output_index: data.output_index,
+                    // output_index: data.output_index,
                 });
             if (data.type === "response.done")
                 this._emit("response_done", {
@@ -346,13 +346,13 @@ class LLMService extends EventEmitter {
                 this._emit("audio_transcript_delta", {
                     sessionId,
                     delta: data.delta,
-                    output_index: data.output_index,
+                    // output_index: data.output_index,
                 });
             if (data.type === "response.audio_transcript.done")
                 this._emit("audio_transcript_done", {
                     sessionId,
                     transcript: data.transcript,
-                    output_index: data.output_index,
+                    // output_index: data.output_index,
                 });
 
             // 함수 호출 인자 스트리밍

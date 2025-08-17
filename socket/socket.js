@@ -225,6 +225,8 @@ class Socket {
           return;
         }
         const out = mapper(data);
+        const s = this.sessions.get(sessionId);
+        const turn_index = s?.turnCount ?? 0;
         if (out.type == "response.audio.delta" && ws.readyState === ws.OPEN) {
           try {
             const buf = audioService.fromBase64Pcm(out.delta);
@@ -243,35 +245,55 @@ class Socket {
       ws._llmHandlers.push({ event, handler });
     };
 
-    fwd("text_delta", ({ output_index, delta }) => ({
-      type: "response.text.delta",
-      output_index,
-      delta,
-    }));
-    fwd("text_done", ({ output_index }) => ({
-      type: "response.text.done",
-      output_index,
-    }));
+    fwd("text_delta", ({ delta }) => {
+      const s = this.sessions.get(sessionId);
+      return {
+        type: "response.text.delta",
+        output_index: s?.turnCount ?? 0,
+        delta,
+      }
+    });
+    fwd("text_done", () => {
+      const s = this.sessions.get(sessionId);
+      return {
+        type: "response.text.done",
+        output_index: s?.turnCount ?? 0,
+      }
+    });
 
-    fwd("audio_transcript_delta", ({ output_index, delta }) => ({
-      type: "response.audio_transcript.delta",
-      output_index,
-      delta,
-    }));
-    fwd("audio_transcript_done", ({ output_index }) => ({
-      type: "response.audio_transcript.done",
-      output_index,
-    }));
+    fwd("audio_transcript_delta", ({ delta }) => {
+      const s = this.sessions.get(sessionId);
+      return {
+        type: "response.audio_transcript.delta",
+        output_index: s?.turnCount ?? 0,
+        delta,
+      }
+    });
 
-    fwd("audio_delta", ({ output_index, delta }) => ({
-      type: "response.audio.delta",
-      output_index,
-      delta,
-    }));
-    fwd("audio_done", ({ output_index }) => ({
-      type: "response.audio.done",
-      output_index,
-    }));
+    fwd("audio_transcript_done", () => {
+      const s = this.sessions.get(sessionId);
+      return {
+        type: "response.audio_transcript.done",
+        output_index: s?.turnCount ?? 0,
+      }
+    });
+
+    fwd("audio_delta", ({ delta }) => {
+      const s = this.sessions.get(sessionId);
+      return {
+        type: "response.audio.delta",
+        output_index: s?.turnCount ?? 0,
+        delta,
+      }
+    });
+    
+    fwd("audio_done", () => {
+      const s = this.sessions.get(sessionId);
+      return {
+        type: "response.audio.done",
+        output_index: s?.turnCount ?? 0,
+      }
+    });
     
     const onErr = ({ sessionId: sid, error }) => {
       if (sid !== sessionId) {
