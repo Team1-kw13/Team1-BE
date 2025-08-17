@@ -13,6 +13,24 @@ function genId(p = "sonj") {
   return `${p}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function toInt(v, fallback) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+function sanitizeError(err) {
+  const code = toInt(err?.code ?? err?.error?.code, 1011);
+  let message =
+    (typeof err?.message === "string" && err.message) ||
+    (typeof err?.error?.message === "string" && err.error.message) ||
+    "Upstream error";
+  // 원문 보호
+  if (message.length > 500) {
+    message = message.slice(0, 500) + "…";
+  }
+  return { code, message };
+};
+
 class Socket {
   constructor() {
     this.wss = null;
@@ -244,17 +262,29 @@ class Socket {
       type: "response.audio.done",
       output_index,
     }));
-
-    const onErr = ({ error }) => {
+    
+    const onErr = ({ sessionId: sid, error }) => {
+      if (sid !== sessionId) {
+        return
+      };
+      
+      const { code, message } = sanitizeError(error)
       this._sendError(
         ws,
-        error?.code ?? 1011,
-        error?.message ?? "Upstream error",
-        { raw: error }
+        code,
+        message
       );
-    }
-    
-    const onClosed = ({ code, reason }) => this._sendError(ws, code ?? 1011, reason || "Upstream closed")
+    };
+
+    const onClosed = ({ sessionId: sid, code, reason }) => {
+      if (sid !== sessionId) {
+        return
+      };
+      const c = toInt(code, 1011);
+      const r =
+        (typeof reason === "string" && reason) || "Upstream closed";
+      this._sendError(ws, c, r);
+    };
     
     llmService.on("error", onErr);
     llmService.on("closed", onClosed);
