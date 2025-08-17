@@ -420,7 +420,7 @@ class LLMService extends EventEmitter {
     async _handleToolCall(ws, sessionId, name, callId, args) {
         // 레이트리밋
         const last = this.lastToolAt.get(sessionId) || 0;
-        if (Date.now() - last < this.minToolIntervalMs && last) {
+        if (Date.now() - last < this.minToolIntervalMs) {
             this._send(ws, {
                 type: "conversation.item.create",
                 item: {
