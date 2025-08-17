@@ -221,8 +221,8 @@ class Socket {
         const out = mapper(data);
         if (out.type == "response.audio.delta" && ws.readyState === ws.OPEN) {
           try {
-            const buf = audioService.fromBase64Pcm(out.delta)
-            ws.send(buf, { binary: true })
+            const buf = audioService.fromBase64Pcm(out.delta);
+            ws.send(buf, { binary: true });
           } catch (e) {
             this._sendError(ws, 502, `Upstream audio decode failed: ${e.message}`);
           }
