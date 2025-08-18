@@ -379,7 +379,7 @@ class LLMService extends EventEmitter {
                 case "conversation.item.input_audio_transcription.delta":
                     this._emit("input_audio_transcript_delta", {
                         sessionId,
-                        itemId: item_id,
+                        itemId: data.item_id,
                         delta: data.delta,
                         // output_index: data.output_index,
                     });
@@ -388,7 +388,7 @@ class LLMService extends EventEmitter {
                 case "conversation.item.input_audio_transcription.completed":
                     this._emit("input_audio_transcript_done", {
                         sessionId,
-                        itemId: item_id,
+                        itemId: data.item_id,
                         // output_index: data.output_index,
                     });
                     break;
