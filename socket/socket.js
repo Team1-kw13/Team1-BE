@@ -219,20 +219,24 @@ class Socket {
         // Buffer를 base64로 변환
         const base64Image = report.image.data.toString('base64');
         
-        // 클라이언트에게 전송
-        ws.send(JSON.stringify({
-          channel: "sonju:summarize",
-          type: "summary.image",
-          image_base64: base64Image,
-          sessionId: sessionId,
-          timestamp: report.timestamp
-        }));
+        // 클라이언트에게 전송 (WebSocket 상태 체크)
+        if (ws.readyState === ws.OPEN) {
+          ws.send(JSON.stringify({
+            channel: "sonju:summarize",
+            type: "summary.image",
+            image_base64: base64Image,
+            image_format: report.image.format || "png",
+            sessionId,
+            timestamp: report.timestamp
+          }));
+        }
       } else {
         // 이미지 생성 실패
         this._sendError(ws, 500, "요약 이미지 생성에 실패했습니다.");
       }
     } catch (error) {
-      this._sendError(ws, 500, `요약 생성 실패: ${error.message}`);
+      const { code, message } = sanitizeError(error);
+      this._sendError(ws, code, `요약 생성 실패: ${message}`);
     }
   }
 
