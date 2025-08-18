@@ -311,139 +311,171 @@ class LLMService extends EventEmitter {
             if (!data) return;
 
             this._emit("realtime.raw", { sessionId, data });
-
-            // 텍스트/오디오 응답 스트림
-            if (data.type === "response.text.delta")
-                this._emit("text_delta", {
-                    sessionId,
-                    delta: data.delta,
-                    // output_index: data.output_index,
-                });
-            if (data.type === "response.text.done")
-                this._emit("text_done", {
-                    sessionId,
-                    // output_index: data.output_index,
-                });
-            if (data.type === "response.audio.delta")
-                this._emit("audio_delta", {
-                    sessionId,
-                    delta: data.delta,
-                    // output_index: data.output_index,
-                });
-            if (data.type === "response.audio.done")
-                this._emit("audio_done", {
-                    sessionId,
-                    // output_index: data.output_index,
-                });
-            if (data.type === "response.done")
-                this._emit("response_done", {
-                    sessionId,
-                    response: data.response,
-                });
-
-            // 전사 스트림
-            if (data.type === "response.audio_transcript.delta")
-                this._emit("audio_transcript_delta", {
-                    sessionId,
-                    delta: data.delta,
-                    // output_index: data.output_index,
-                });
-            if (data.type === "response.audio_transcript.done")
-                this._emit("audio_transcript_done", {
-                    sessionId,
-                    transcript: data.transcript,
-                    // output_index: data.output_index,
-                });
-
-            // 함수 호출 인자 스트리밍
-            if (data.type === "response.function_call_arguments.delta") {
-                const calls = this.fcalls.get(sessionId) || new Map();
-                let prev = calls.get(data.call_id) || ""
-                prev += data.delta || "";
-                calls.set(data.call_id, prev);
-                this.fcalls.set(sessionId, calls);
-                return;
-            } //name은 오지 않음
-
-            // 함수 호출 인자 완료 → 실제 툴 실행
-            if (data.type === "response.function_call_arguments.done") {
-                const calls = this.fcalls.get(sessionId) || new Map();
-                const argsStr = calls.get(data.call_id) || "";
-                
-                calls.delete(data.call_id);
-                this.fcalls.set(sessionId, calls);
-                
-                const toolName =
-                    typeof data.name === "string" && data.name.length > 0
-                        ? data.name
-                        : null;
-                if (!toolName) {
-                    this._send(ws, {
-                        type: "conversation.item.create",
-                        item: {
-                            type: "function_call_output",
-                            call_id: data.call_id,
-                            output: JSON.stringify({ error: "missing tool name" }),
-                        },
-                    });
-                    this._send(ws, { type: "response.create" });
-                    return;
-                }
-    
-                // JSON 인자 파싱
-                let parsedArgs = {};
-                try {
-                    parsedArgs = argsStr ? JSON.parse(argsStr) : {};
-                } catch (e) {
-                    this._send(ws, {
-                        type: "conversation.item.create",
-                        item: {
-                            type: "function_call_output",
-                            call_id: data.call_id,
-                            output: JSON.stringify({
-                                error: "invalid JSON arguments",
-                                detail: String(e),
-                            }),
-                        },
-                    });
-                    this._send(ws, { type: "response.create" });
-                    return;
-                }
-
-                try {
-                    await this._handleToolCall(
-                        ws,
+            switch (data.type) {
+                // 텍스트/오디오 응답 스트림
+                case "response.text.delta":
+                    this._emit("text_delta", {
                         sessionId,
-                        toolName,
-                        data.call_id,
-                        parsedArgs,
-                    );
-                } catch (err) {
-                    this._send(ws, {
-                        type: "conversation.item.create",
-                        item: {
-                            type: "function_call_output",
-                            call_id: data.call_id,
-                            output: JSON.stringify({ error: String(err) }),
-                        },
+                        delta: data.delta,
+                        // output_index: data.output_index,
                     });
-                    this._send(ws, { type: "response.create" });
-                }
-                return;
-            }
+                    break;
+                
+                case "response.text.done":
+                    this._emit("text_done", {
+                        sessionId,
+                        // output_index: data.output_index,
+                    });
+                    break;
+                
+                case "response.audio.delta":
+                    this._emit("audio_delta", {
+                        sessionId,
+                        delta: data.delta,
+                        // output_index: data.output_index,
+                    });
+                    break;
+                
+                case "response.audio.done":
+                    this._emit("audio_done", {
+                        sessionId,
+                        // output_index: data.output_index,
+                    });
+                    break;
+                
+                case "response.done":
+                    this._emit("response_done", {
+                        sessionId,
+                        response: data.response,
+                    });
+                    break;
+                
+                case "response.audio_transcript.delta":
+                    this._emit("audio_transcript_delta", {
+                        sessionId,
+                        delta: data.delta,
+                        // output_index: data.output_index,
+                    });
+                    break;
+                
+                case "response.audio_transcript.done":
+                    this._emit("audio_transcript_done", {
+                        sessionId,
+                        transcript: data.transcript,
+                        // output_index: data.output_index,
+                    });
+                    break;
+                
+                // 전사 스트림
+                case "conversation.item.input_audio_transcription.delta":
+                    this._emit("input_audio_transcript_delta", {
+                        sessionId,
+                        itemId: item_id,
+                        delta: data.delta,
+                        // output_index: data.output_index,
+                    });
+                    break;
+                
+                case "conversation.item.input_audio_transcription.completed":
+                    this._emit("input_audio_transcript_done", {
+                        sessionId,
+                        itemId: item_id,
+                        // output_index: data.output_index,
+                    });
+                    break;
+                // 함수 호출 인자 스트리밍
+                case "response.function_call_arguments.delta": {
+                    const calls = this.fcalls.get(sessionId) || new Map();
+                    let prev = calls.get(data.call_id) || ""
+                    prev += data.delta || "";
+                    calls.set(data.call_id, prev);
+                    this.fcalls.set(sessionId, calls);
+                    break;
+                } //name은 오지 않음
 
-            if (data.type === "error" || data.type === "response.error")
-                this._emit("error", { sessionId, error: data });
-            if (data.type === "session.created")
-                this._emit("session_created", {
-                    sessionId,
-                    session: data.session,
-                });
-            if (data.type === "session.updated")
-                this._emit("session_updated", {
-                    sessionId,
-                    session: data.session,
-                });
+                // 함수 호출 인자 완료 → 실제 툴 실행
+                case "response.function_call_arguments.done": {
+                    const calls = this.fcalls.get(sessionId) || new Map();
+                    const argsStr = calls.get(data.call_id) || "";
+                    
+                    calls.delete(data.call_id);
+                    this.fcalls.set(sessionId, calls);
+                    
+                    const toolName =
+                        typeof data.name === "string" && data.name.length > 0
+                            ? data.name
+                            : null;
+                    if (!toolName) {
+                        this._send(ws, {
+                            type: "conversation.item.create",
+                            item: {
+                                type: "function_call_output",
+                                call_id: data.call_id,
+                                output: JSON.stringify({ error: "missing tool name" }),
+                            },
+                        });
+                        this._send(ws, { type: "response.create" });
+                        break;
+                    }
+        
+                    // JSON 인자 파싱
+                    let parsedArgs = {};
+                    try {
+                        parsedArgs = argsStr ? JSON.parse(argsStr) : {};
+                    } catch (e) {
+                        this._send(ws, {
+                            type: "conversation.item.create",
+                            item: {
+                                type: "function_call_output",
+                                call_id: data.call_id,
+                                output: JSON.stringify({
+                                    error: "invalid JSON arguments",
+                                    detail: String(e),
+                                }),
+                            },
+                        });
+                        this._send(ws, { type: "response.create" });
+                        break;
+                    }
+
+                    try {
+                        await this._handleToolCall(
+                            ws,
+                            sessionId,
+                            toolName,
+                            data.call_id,
+                            parsedArgs,
+                        );
+                    } catch (err) {
+                        this._send(ws, {
+                            type: "conversation.item.create",
+                            item: {
+                                type: "function_call_output",
+                                call_id: data.call_id,
+                                output: JSON.stringify({ error: String(err) }),
+                            },
+                        });
+                        this._send(ws, { type: "response.create" });
+                    }
+                    break;
+                }
+                case "error":
+                case "response.error":
+                    this._emit("error", { sessionId, error: data });
+                    break;
+                case "session.created":
+                    this._emit("session_created", {
+                        sessionId,
+                        session: data.session,
+                    });
+                    break;
+                case "session.updated":
+                    this._emit("session_updated", {
+                        sessionId,
+                        session: data.session,
+                    });
+                    break;
+            }
         });
 
         ws.on("error", (err) => this._emit("error", { sessionId, error: err }));
