@@ -51,6 +51,13 @@ class Socket {
         console.log("Socket server ready on '/'");
     }
 
+    getCoord(sessionId) {
+        const s = this.sessions.get(sessionId);
+        if (!s) return [0.0, 0.0];
+        const [lat, lon] = Array.isArray(s.coord) ? s.coord : [0.0, 0.0];
+        return [Number(lat) || 0.0, Number(lon) || 0.0];
+    }
+
     _bind() {
         const heartbeat = function () {
             this.isAlive = true;
