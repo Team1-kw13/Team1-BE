@@ -2,6 +2,7 @@ const { Server: WebSocketServer } = require("ws");
 const llmService = require("../service/llmService");
 const audioService = require("../service/audioService");
 const summaryService = require("../service/summaryService");
+const suggestionService = require("../service/suggestionService");
 
 function safeParse(m) {
     try {
@@ -62,7 +63,10 @@ class Socket {
             // 연결당 1 세션
             const sessionId = genId("sonj");
             ws._sessionId = sessionId;
-            this.sessions.set(sessionId, { turn: [] });
+            this.sessions.set(sessionId, {
+                turn: [],
+                userTranscript: "", // 사용자 음성 전사 누적
+            });
 
             try {
                 await llmService.createRealtimeSession(
@@ -94,7 +98,6 @@ class Socket {
                     }
                     return;
                 }
-
                 const msg = safeParse(raw.toString());
                 if (!msg || typeof msg !== "object") {
                     return this._sendError(ws, 400, "Invalid message format");
@@ -248,6 +251,29 @@ class Socket {
         }
     }
 
+    async _generateSuggestionsAfterResponse(ws, sessionId) {
+        try {
+            const session = this.sessions.get(sessionId);
+            if (!session?.lastUserInput?.trim()) return;
+
+            const context = session.lastUserInput;
+            const suggestions = await suggestionService.generate(context);
+
+            if (ws.readyState === ws.OPEN) {
+                ws.send(
+                    JSON.stringify({
+                        channel: "sonju:suggestedQuestion",
+                        type: "suggestion.response",
+                        questions: suggestions,
+                        timestamp: Date.now(),
+                    })
+                );
+            }
+        } catch (err) {
+            console.error("자동 제안 질문 생성 실패:", err.message);
+        }
+    }
+
     // ====== LLM event → client forwarding ======
     _setupLLMForwarding(sessionId, ws) {
         const fwd = (event, mapper) => {
@@ -256,7 +282,10 @@ class Socket {
                     return;
                 }
                 const out = mapper(data);
-                if (out.type == "response.audio.delta" && ws.readyState === ws.OPEN) {
+                if (
+                    out.type == "response.audio.delta" &&
+                    ws.readyState === ws.OPEN
+                ) {
                     try {
                         const buf = audioService.fromBase64Pcm(out.delta);
                         ws.send(buf, { binary: true });
@@ -293,6 +322,8 @@ class Socket {
         });
 
         fwd("text_done", () => {
+            this._generateSuggestionsAfterResponse(ws, sessionId);
+
             return {
                 type: "response.text.done",
                 output_index: this._getTurnCount(sessionId),
@@ -329,12 +360,15 @@ class Socket {
                 output_index: this._getTurnCount(sessionId),
             };
         });
-    
+
         // transcript
         fwd("input_audio_transcript_delta", ({ delta, itemId }) => {
-            console.log(delta)
-            console.log(itemId)
-            console.log(this._getTurnIdx(sessionId, itemId))
+            // 사용자 음성 전사 누적
+            this._accumUserTranscript(sessionId, delta);
+
+            console.log(delta);
+            console.log(itemId);
+            console.log(this._getTurnIdx(sessionId, itemId));
             return {
                 type: "input_audio_transcription.delta",
                 output_index: this._getTurnIdx(sessionId, itemId),
@@ -343,12 +377,18 @@ class Socket {
         });
 
         fwd("input_audio_transcript_done", ({ itemId }) => {
+            // 누적된 사용자 전사를 lastUserInput로 설정
+            const fullTranscript = this._consumeUserTranscript(sessionId);
+            if (fullTranscript) {
+                this._setUserContext(sessionId, fullTranscript);
+            }
+
             return {
                 type: "input_audio_transcription.done",
                 output_index: this._getTurnIdx(sessionId, itemId),
             };
         });
-        
+
         // committed
         const onCommitted = ({ itemId }) => {
             this._addTurn(sessionId, itemId);
@@ -376,16 +416,47 @@ class Socket {
         llmService.on("input_audio_buffer_committed", onCommitted);
         llmService.on("error", onErr);
         llmService.on("closed", onClosed);
-        ws._llmHandlers.push({ event: "input_audio_buffer_committed", handler: onCommitted })
+        ws._llmHandlers.push({
+            event: "input_audio_buffer_committed",
+            handler: onCommitted,
+        });
         ws._llmHandlers.push({ event: "error", handler: onErr });
         ws._llmHandlers.push({ event: "closed", handler: onClosed });
     }
 
-    _addTurn(sessionId, itemId='text') {
-        const s = this.sessions.get(sessionId);
-        if (!s) { return; }
+    _setUserContext(sessionId, userInput) {
+        const session = this.sessions.get(sessionId);
+        if (session) {
+            session.lastUserInput = userInput;
+        }
+    }
 
-        if (!Array.isArray(s.turn)) { s.turn = []; }
+    // 사용자 음성 전사 누적
+    _accumUserTranscript(sessionId, delta) {
+        const session = this.sessions.get(sessionId);
+        if (!session) return;
+        session.userTranscript =
+            (session.userTranscript || "") + String(delta || "");
+    }
+
+    // 누적된 사용자 전사를 소비하고 초기화
+    _consumeUserTranscript(sessionId) {
+        const session = this.sessions.get(sessionId);
+        if (!session) return "";
+        const transcript = String(session.userTranscript || "").trim();
+        session.userTranscript = "";
+        return transcript;
+    }
+
+    _addTurn(sessionId, itemId = "text") {
+        const s = this.sessions.get(sessionId);
+        if (!s) {
+            return;
+        }
+
+        if (!Array.isArray(s.turn)) {
+            s.turn = [];
+        }
         s.turn.push(itemId);
     }
 
@@ -397,7 +468,7 @@ class Socket {
     _getTurnIdx(sessionId, itemId) {
         const s = this.sessions.get(sessionId);
         if (!Array.isArray(s?.turn)) return 0;
-        
+
         const idx = s.turn.indexOf(itemId);
         return idx !== -1 ? idx : 0;
     }
