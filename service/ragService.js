@@ -1,6 +1,13 @@
 const openai = require("../config/openai");
+const { z } = require("zod");
+const { zodTextFormat } = require("openai/helpers/zod");
 
 const VECTOR_STORE_ID = "vs_68a25581cb148191a13fcca31d0d6992";
+
+function truncate(s, max = 400) {
+    if (!s) return "";
+    return s.length > max ? s.slice(0, max) + "\n...[truncated]" : s;
+}
 
 class RAGService {
     async searchVectorDB(query, options = {}) {
@@ -20,10 +27,11 @@ class RAGService {
             );
         }
 
-        const search_result = await openai.vectorStores.search(VECTOR_STORE_ID, {
-            query: query,
-            max_num_results: topK,
-            rewrite_query: false,
+        const SearchItem = z.object({
+            file_id: z.string(),
+            filename: z.string().nullish(),
+            score: z.number().min(0).max(1),
+            text: z.string(),
         });
 
         const items = (Array.isArray(search_result?.data) ? search_result.data : []).map((data) => {
@@ -39,6 +47,37 @@ class RAGService {
                 text,
             };
         });
+
+        const resp = await openai.responses.parse({
+            model: "gpt-4.1-nano",
+            tools: [
+                { type: "file_search", vector_store_ids: [VECTOR_STORE_ID] },
+            ],
+            input: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "input_text", // 이 환경에선 input_text가 정답
+                            text: [
+                                `질문: ${query}`,
+                                `지시사항:`,
+                                `- 첨부된 벡터 스토어에서만 근거를 찾아라.`,
+                                `- 관련성이 높은 조각 최대 ${topK}개만 선택.`,
+                                `- 각 text는 최대 ${maxChars}자 이내로 요약.`,
+                                `- score는 검색 유사도 기반 0~1(근거 없으면 0).`,
+                                `- 스키마 외 필드는 절대 추가하지 말 것.`,
+                            ].join("\n"),
+                        },
+                    ],
+                },
+            ],
+            // 최상위 object를 요구하므로 이 스키마를 연결
+            text: { format: zodTextFormat(SearchResults, "search_results") },
+        });
+
+        const parsed = resp.output_parsed ?? { results: [] };
+        const items = parsed.results;
 
         return items.map((item) => ({
             content:
