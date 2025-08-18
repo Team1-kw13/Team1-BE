@@ -130,9 +130,9 @@ class Socket {
                     return this._handleSummarize(ws, sessionId);
                 }
                 if (channel === "sonju:currentCoord") {
-                      const s = this.sessions.get(sessionId);
-                      if (s) s.coord = [msg.lat ?? 0.0, msg.lon ?? 0.0];
-                      return;      
+                    const s = this.sessions.get(sessionId);
+                    if (s) s.coord = [msg.lat ?? 0.0, msg.lon ?? 0.0];
+                    return;
                 }
 
                 // 수신 전용 채널은 클라 → 서버 요청 무시
