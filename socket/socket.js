@@ -37,7 +37,7 @@ class Socket {
     constructor() {
         this.wss = null;
         this._hb = null;
-        this.sessions = new Map(); // sessionId -> { turnCount: number }
+        this.sessions = new Map(); // sessionId -> { turn: [itemId | "text"] }
     }
 
     init(server) {
