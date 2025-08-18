@@ -38,7 +38,6 @@ class Socket {
         this.wss = null;
         this._hb = null;
         this.sessions = new Map(); // sessionId -> { turnCount: number }
-        this.suggestionGenerated = new Map(); // sessionId -> Set<turnCount> (턴별 중복 방지)
     }
 
     init(server) {
@@ -64,7 +63,10 @@ class Socket {
             // 연결당 1 세션
             const sessionId = genId("sonj");
             ws._sessionId = sessionId;
-            this.sessions.set(sessionId, { turn: [] });
+            this.sessions.set(sessionId, {
+                turn: [],
+                userTranscript: "", // 사용자 음성 전사 누적
+            });
 
             try {
                 await llmService.createRealtimeSession(
@@ -136,7 +138,6 @@ class Socket {
                     await llmService.closeSession(sessionId);
                 } catch {}
                 this.sessions.delete(sessionId);
-                this.suggestionGenerated.delete(sessionId);
             });
         });
 
@@ -189,7 +190,6 @@ class Socket {
             this._addTurn(sessionId);
             try {
                 const text = String(msg.text ?? "");
-                this._setUserContext(sessionId, text);
                 llmService.sendTextMessage(sessionId, text, {
                     modalities: ["text", "audio"],
                 });
@@ -254,19 +254,13 @@ class Socket {
     async _generateSuggestionsAfterResponse(ws, sessionId) {
         try {
             const session = this.sessions.get(sessionId);
-            if (!session?.lastUserInput) return;
+            if (!session?.lastUserInput?.trim()) return;
 
             const currentTurn = this._getTurnCount(sessionId);
-            
-            // 이 세션의 제안 생성 턴 Set 가져오기 (없으면 새로 생성)
-            if (!this.suggestionGenerated.has(sessionId)) {
-                this.suggestionGenerated.set(sessionId, new Set());
-            }
-            const generatedTurns = this.suggestionGenerated.get(sessionId);
-            
+
             // 이미 이 턴에서 제안 질문을 생성했으면 스킵
             if (generatedTurns.has(currentTurn)) return;
-            
+
             // 이 턴을 생성 완료로 마킹
             generatedTurns.add(currentTurn);
 
@@ -353,8 +347,6 @@ class Socket {
         });
 
         fwd("audio_transcript_done", () => {
-            this._generateSuggestionsAfterResponse(ws, sessionId);
-
             return {
                 type: "response.audio_transcript.done",
                 output_index: this._getTurnCount(sessionId),
@@ -379,6 +371,9 @@ class Socket {
 
         // transcript
         fwd("input_audio_transcript_delta", ({ delta, itemId }) => {
+            // 사용자 음성 전사 누적
+            this._accumUserTranscript(sessionId, delta);
+
             console.log(delta);
             console.log(itemId);
             console.log(this._getTurnIdx(sessionId, itemId));
@@ -390,6 +385,12 @@ class Socket {
         });
 
         fwd("input_audio_transcript_done", ({ itemId }) => {
+            // 누적된 사용자 전사를 lastUserInput로 설정
+            const fullTranscript = this._consumeUserTranscript(sessionId);
+            if (fullTranscript) {
+                this._setUserContext(sessionId, fullTranscript);
+            }
+
             return {
                 type: "input_audio_transcription.done",
                 output_index: this._getTurnIdx(sessionId, itemId),
@@ -436,6 +437,23 @@ class Socket {
         if (session) {
             session.lastUserInput = userInput;
         }
+    }
+
+    // 사용자 음성 전사 누적
+    _accumUserTranscript(sessionId, delta) {
+        const session = this.sessions.get(sessionId);
+        if (!session) return;
+        session.userTranscript =
+            (session.userTranscript || "") + String(delta || "");
+    }
+
+    // 누적된 사용자 전사를 소비하고 초기화
+    _consumeUserTranscript(sessionId) {
+        const session = this.sessions.get(sessionId);
+        if (!session) return "";
+        const transcript = String(session.userTranscript || "").trim();
+        session.userTranscript = "";
+        return transcript;
     }
 
     _addTurn(sessionId, itemId = "text") {
