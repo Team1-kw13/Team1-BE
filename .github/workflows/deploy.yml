@@ -9,19 +9,13 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
             - name: Checkout source code
               uses: actions/checkout@v3
 
-=======
->>>>>>> Stashed changes
             - name: Decrypt .env.enc file
               run: |
                   openssl aes-256-cbc -d -in env.enc -out .env -pbkdf2 -k "${{ secrets.ENV_SECRET_KEY }}"
 
->>>>>>> Stashed changes
             - name: Rsync project to EC2
               uses: burnett01/rsync-deployments@5.2
               with:
