@@ -173,7 +173,6 @@ class Socket {
         }
 
         if (type === "input_audio_buffer.end") {
-            this._addTurnCount(sessionId);
             try {
                 llmService.commitAudioAndCreateResponse(sessionId, {
                     modalities: ["text", "audio"],
@@ -185,7 +184,7 @@ class Socket {
         }
 
         if (type === "input_text") {
-            this._addTurnCount(sessionId);
+            this._addTurn(sessionId);
             try {
                 const text = String(msg.text ?? "");
                 llmService.sendTextMessage(sessionId, text, {
@@ -202,7 +201,7 @@ class Socket {
         }
 
         if (type === "preprompted") {
-            this._addTurnCount(sessionId);
+            this._addTurn(sessionId);
             const selected = msg.enum || "";
             return this._sendConv(ws, {
                 type: "preprompted.done",
