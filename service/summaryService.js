@@ -1,32 +1,11 @@
-const openai = require("../config/openai");
 const puppeteer = require("puppeteer");
-const { z } = require("zod");
-
-// zod 스키마 정의
-const SummarySchema = z.object({
-    topic: z.string().describe("고객이 문의한 핵심 주제"),
-    issues: z.string().describe("고객의 구체적인 질문과 요청사항"),
-    resolved: z.string().describe("현재까지 제공한 답변, 해결책, 안내사항"),
-    remaining: z
-        .string()
-        .describe("아직 해결되지 않은 문제나 추가 확인이 필요한 사항"),
-    emotion: z
-        .enum(["만족", "보통", "불만족", "화남", "급함", "중립"])
-        .describe("고객의 현재 감정 상태"),
-    urgency: z.enum(["낮음", "보통", "높음"]).describe("상담의 긴급도"),
-    progress: z.string().describe("대화의 흐름과 고객 반응"),
-    additional: z
-        .string()
-        .describe("고객이 제공한 특이사항이나 중요한 배경 정보"),
-    followUp: z.string().describe("다음에 해야 할 구체적인 액션 아이템"),
-});
 
 class SummaryService {
     constructor() {
         this.browser = null;
     }
 
-    // Puppeteer 브라우저 초기화 (최적화됨)
+    // Puppeteer 브라우저 초기화
     async _initPuppeteer() {
         if (!this.browser) {
             this.browser = await puppeteer.launch({
@@ -54,193 +33,64 @@ class SummaryService {
         }
     }
 
-    // 세션 요약 생성 (Chat API + Realtime 대화 히스토리)
-    async requestSessionSummary(llmService, sessionId, options = {}) {
-        const { format = "report" } = options;
+    // Realtime API에서 직접 구조화된 요약 요청 (효율적)
+    async _getStructuredSummaryFromRealtime(llmService, sessionId) {
+        try {
+            const summaryPrompt = `지금까지의 고객 상담 내용을 담당자 인수인계용으로 정확하고 자세하게 구조화해서 요약해주세요.
 
-        // 1. Realtime 세션에서 대화 히스토리 가져오기
-        const conversationHistory = await this._getRealtimeConversationHistory(
+**출력 형식을 정확히 준수하세요:**
+
+상담 주제: [고객이 문의한 핵심 주제를 구체적으로 기술]
+
+주요 문의사항: [고객의 구체적인 질문과 요청사항을 상세히 나열]
+
+해결된 내용: [현재까지 제공한 답변, 해결책, 안내사항을 구체적으로 기술]
+
+남은 이슈: [아직 해결되지 않은 문제나 추가 확인이 필요한 사항을 명확히 기술]
+
+고객 감정: [만족/보통/불만/불만족/화남/급함/중립 중 정확히 하나만 선택]
+
+긴급도: [낮음/보통/높음 중 정확히 하나만 선택]
+
+상담 진행 상황: [다음 항목을 포함하여 상세히 작성]
+- 초기 접촉 방식과 고객 태도
+- 문제 파악 과정에서의 고객 협조도
+- 해결책 제시 시 고객 반응
+- 대화 중 감정 변화나 특이사항
+- 현재 상담 단계 (문제 파악/해결책 제시/해결 완료/추가 지원 필요 등)
+- 고객 만족도 변화 추이
+
+추가 정보: [고객이 제공한 특이사항, 중요한 배경 정보, 시스템 환경, 사용 패턴 등을 구체적으로 기술]
+
+후속 조치: [다음에 해야 할 구체적인 액션 아이템을 우선순위와 함께 나열]
+
+**중요: 각 항목의 제목을 정확히 유지하고, 내용은 구체적이고 실용적으로 작성하세요.**`;
+
+            const response = await llmService.sendTextMessageWithResponse(
+                sessionId,
+                summaryPrompt
+            );
+            return response.text;
+        } catch (error) {
+            throw new Error(`Realtime 요약 생성 실패: ${error.message}`);
+        }
+    }
+
+    async generateSessionReport(llmService, sessionId, options = {}) {
+        const { theme = "light", format = "image" } = options; // format: "image" | "html" | "both"
+
+        const summaryText = await this._getStructuredSummaryFromRealtime(
             llmService,
             sessionId
         );
 
-        if (!conversationHistory || conversationHistory.trim().length === 0) {
-            throw new Error("요약할 대화 내용이 없습니다.");
-        }
-
-        // 2. Chat API로 요약 생성
-        try {
-            let response;
-
-            if (format === "report") {
-                // Structured output 사용
-                response = await openai.chat.completions.create({
-                    model: "gpt-4o-mini",
-                    messages: [
-                        {
-                            role: "system",
-                            content:
-                                "당신은 고객 상담 내용을 담당자 인수인계용으로 정확하게 요약하는 전문가입니다.",
-                        },
-                        {
-                            role: "user",
-                            content: `다음 고객 상담 내용을 구조화된 형태로 요약해주세요:\n\n${conversationHistory}`,
-                        },
-                    ],
-                    response_format: {
-                        type: "json_schema",
-                        json_schema: {
-                            name: "summary_report",
-                            schema: {
-                                type: "object",
-                                properties: {
-                                    topic: {
-                                        type: "string",
-                                        description: "고객이 문의한 핵심 주제",
-                                    },
-                                    issues: {
-                                        type: "string",
-                                        description:
-                                            "고객의 구체적인 질문과 요청사항",
-                                    },
-                                    resolved: {
-                                        type: "string",
-                                        description:
-                                            "현재까지 제공한 답변, 해결책, 안내사항",
-                                    },
-                                    remaining: {
-                                        type: "string",
-                                        description:
-                                            "아직 해결되지 않은 문제나 추가 확인이 필요한 사항",
-                                    },
-                                    emotion: {
-                                        type: "string",
-                                        enum: [
-                                            "만족",
-                                            "보통",
-                                            "불만족",
-                                            "화남",
-                                            "급함",
-                                            "중립",
-                                        ],
-                                        description: "고객의 현재 감정 상태",
-                                    },
-                                    urgency: {
-                                        type: "string",
-                                        enum: ["낮음", "보통", "높음"],
-                                        description: "상담의 긴급도",
-                                    },
-                                    progress: {
-                                        type: "string",
-                                        description: "대화의 흐름과 고객 반응",
-                                    },
-                                    additional: {
-                                        type: "string",
-                                        description:
-                                            "고객이 제공한 특이사항이나 중요한 배경 정보",
-                                    },
-                                    followUp: {
-                                        type: "string",
-                                        description:
-                                            "다음에 해야 할 구체적인 액션 아이템",
-                                    },
-                                },
-                                required: [
-                                    "topic",
-                                    "issues",
-                                    "resolved",
-                                    "remaining",
-                                    "emotion",
-                                    "urgency",
-                                    "progress",
-                                    "additional",
-                                    "followUp",
-                                ],
-                                additionalProperties: false,
-                            },
-                        },
-                    },
-                    temperature: 0.3,
-                    max_tokens: 1000,
-                });
-
-                // JSON 파싱 및 검증
-                const jsonData = JSON.parse(
-                    response.choices[0].message.content
-                );
-                const validatedData = SummarySchema.parse(jsonData);
-
-                // 텍스트 형태로 변환
-                const summaryText = `상담 주제: ${validatedData.topic}
-주요 문의사항: ${validatedData.issues}
-해결된 내용: ${validatedData.resolved}
-남은 이슈: ${validatedData.remaining}
-고객 감정: ${validatedData.emotion}
-긴급도: ${validatedData.urgency}
-상담 진행 상황: ${validatedData.progress}
-추가 정보: ${validatedData.additional}
-후속 조치: ${validatedData.followUp}`;
-
-                return {
-                    sessionId,
-                    summary: summaryText,
-                    format,
-                    timestamp: Date.now(),
-                    usage: response.usage,
-                    structured: validatedData,
-                };
-            } else {
-                // 간단한 요약 (기존 방식)
-                const summaryPrompt =
-                    format === "brief"
-                        ? `다음 대화를 3-4문장으로 간략하게 요약해주세요:\n\n${conversationHistory}`
-                        : `다음 상담 내용을 요약해주세요:\n\n${conversationHistory}`;
-
-                response = await openai.chat.completions.create({
-                    model: "gpt-4o-mini",
-                    messages: [{ role: "user", content: summaryPrompt }],
-                    temperature: 0.3,
-                    max_tokens: 800,
-                });
-
-                return {
-                    sessionId,
-                    summary: response.choices[0].message.content,
-                    format,
-                    timestamp: Date.now(),
-                    usage: response.usage,
-                };
-            }
-        } catch (error) {
-            throw new Error(`Chat API 요약 생성 실패: ${error.message}`);
-        }
-    }
-
-    // Realtime 세션에서 대화 히스토리 추출 (간단한 버전)
-    async _getRealtimeConversationHistory(llmService, sessionId) {
-        // 이 부분은 llmService의 내부 구조에 따라 다를 수 있습니다
-        // 간단한 요약 요청으로 대화 내용을 가져오는 방법
-        try {
-            const response = await llmService.sendTextMessageWithResponse(
-                sessionId,
-                "지금까지의 대화 내용을 그대로 정리해서 보여주세요. 사용자와 어시스턴트의 모든 대화를 시간순으로 나열해주세요."
-            );
-            return response.text;
-        } catch (error) {
-            throw new Error(`대화 히스토리 가져오기 실패: ${error.message}`);
-        }
-    }
-
-    // 세션 요약 후 이미지 보고서 생성 (Chat API + Puppeteer)
-    async generateSessionReport(llmService, sessionId, options = {}) {
-        const { theme = "light", format = "image" } = options; // format: "image" | "html" | "both"
-
-        // 1. Chat API로 요약 요청
-        const summaryResult = await this.requestSessionSummary(
-            llmService,
+        const summaryResult = {
             sessionId,
-            { format: "report" }
-        );
+            summary: summaryText,
+            format: "report",
+            timestamp: Date.now(),
+            usage: null,
+        };
 
         // 2. 요약 텍스트를 파싱해서 구조화
         const parsed = this._parseSummaryText(summaryResult.summary);
@@ -287,6 +137,8 @@ class SummaryService {
             width = 800,
             height = 1200,
             quality = 90,
+            compress = false,
+            maxSize = 1024 * 1024,
         } = options;
 
         const browser = await this._initPuppeteer();
@@ -305,11 +157,42 @@ class SummaryService {
             // 폰트 로딩 대기 (최소한)
             await new Promise((resolve) => setTimeout(resolve, 200));
 
-            const imageBuffer = await page.screenshot({
+            let imageBuffer = await page.screenshot({
                 type: format,
                 quality: format === "jpeg" ? quality : undefined,
                 fullPage: true,
             });
+
+            // 이미지 크기 확인 및 압축 (옵션)
+            if (compress && imageBuffer.length > maxSize) {
+                // JPEG로 변환하여 압축 (PNG보다 용량 작음)
+                if (format !== "jpeg") {
+                    imageBuffer = await page.screenshot({
+                        type: "jpeg",
+                        quality: Math.max(60, quality - 20), // 품질 조정
+                        fullPage: true,
+                    });
+                }
+
+                // 여전히 크면 크기 축소
+                if (imageBuffer.length > maxSize) {
+                    const scaleFactor = Math.sqrt(maxSize / imageBuffer.length);
+                    const newWidth = Math.floor(width * scaleFactor);
+                    const newHeight = Math.floor(height * scaleFactor);
+
+                    await page.setViewport({
+                        width: newWidth,
+                        height: newHeight,
+                        deviceScaleFactor: 1,
+                    });
+
+                    imageBuffer = await page.screenshot({
+                        type: "jpeg",
+                        quality: 60,
+                        fullPage: true,
+                    });
+                }
+            }
 
             return imageBuffer;
         } finally {
@@ -317,365 +200,41 @@ class SummaryService {
         }
     }
 
-    // HTML을 이미지로 변환 (SVG 사용 - 기존 호환성)
-    async _htmlToImage(html, options = {}, parsedData = null) {
-        return this._generateSimpleTextImage(html, options, parsedData);
-    }
+    // 상담 진행 상황 내용 포맷팅
+    _formatProgressContent(progressText) {
+        if (!progressText) return "";
 
-    // 텍스트 줄바꿈 헬퍼 함수
-    _wrapText(text, maxCharsPerLine = 70) {
-        if (!text) return [];
-        const words = text.split(" ");
-        const lines = [];
-        let currentLine = "";
+        // 텍스트를 줄 단위로 분리하고 구조화
+        const lines = progressText.split("\n").filter((line) => line.trim());
+        let formattedContent = "";
 
-        for (const word of words) {
-            if ((currentLine + word).length <= maxCharsPerLine) {
-                currentLine += (currentLine ? " " : "") + word;
-            } else {
-                if (currentLine) {
-                    lines.push(currentLine);
-                    currentLine = word;
-                } else {
-                    // 단어가 너무 긴 경우 강제로 나누기
-                    lines.push(word.substring(0, maxCharsPerLine));
-                    currentLine = word.substring(maxCharsPerLine);
-                }
+        for (const line of lines) {
+            const trimmedLine = line.trim();
+
+            // 불릿 포인트나 대시로 시작하는 항목들
+            if (
+                trimmedLine.startsWith("-") ||
+                trimmedLine.startsWith("•") ||
+                trimmedLine.startsWith("*")
+            ) {
+                const content = trimmedLine.substring(1).trim();
+                formattedContent += `<div class="progress-item">${content}</div>`;
+            }
+            // 카테고리 제목 (콜론으로 끝나는 경우)
+            else if (trimmedLine.includes(":") && trimmedLine.length < 50) {
+                formattedContent += `<div class="progress-category">${trimmedLine}</div>`;
+            }
+            // 일반 텍스트
+            else if (trimmedLine.length > 0) {
+                formattedContent += `<div class="progress-item">${trimmedLine}</div>`;
             }
         }
-        if (currentLine) lines.push(currentLine);
-        return lines;
-    }
 
-    // Canvas API를 사용한 간단한 텍스트 이미지 생성 (fallback)
-    _generateSimpleTextImage(html, options = {}, parsedData = null) {
-        let { width = 800, height = "auto" } = options;
-
-        let finalParsed;
-
-        if (parsedData) {
-            // 이미 파싱된 데이터가 있으면 사용
-            finalParsed = {
-                topic: parsedData.topic || "고객 상담 문의",
-                issues: parsedData.issues || "문의 내용을 확인해주세요",
-                resolved: parsedData.resolved || "상담 진행중",
-                emotion: parsedData.emotion || "보통",
-                urgency: parsedData.urgency || "보통",
-                progress: parsedData.progress || "상담 진행중",
-                additional: parsedData.additional || "특이사항 없음",
-            };
-        } else {
-            // HTML에서 주요 정보 추출 (fallback)
-            const textContent = html
-                .replace(/<[^>]*>/g, " ")
-                .replace(/\s+/g, " ")
-                .trim();
-            const parsed = this._parseSummaryText(textContent);
-
-            finalParsed = {
-                topic: parsed.topic || "고객 상담 문의",
-                issues: parsed.issues || textContent.substring(0, 100),
-                resolved: parsed.resolved || "상담 진행중",
-                emotion: parsed.emotion || "보통",
-                urgency: parsed.urgency || "보통",
-                progress: parsed.progress || "상담 진행중",
-                additional: parsed.additional || "특이사항 없음",
-            };
-        }
-
-        // 텍스트 줄바꿈 처리
-        const topicLines = this._wrapText(finalParsed.topic, 90);
-        const issuesLines = this._wrapText(finalParsed.issues, 90);
-        const resolvedLines = this._wrapText(finalParsed.resolved, 90);
-        const emotionLines = this._wrapText(finalParsed.emotion, 90);
-        const urgencyLines = this._wrapText(finalParsed.urgency, 90);
-        const progressLines = this._wrapText(finalParsed.progress, 90);
-        const additionalLines = this._wrapText(finalParsed.additional, 90);
-
-        // Y 좌표 계산
-        let y = 110;
-        const sections = [
-            { title: "📋 상담 주제:", lines: topicLines },
-            { title: "❓ 주요 문의사항:", lines: issuesLines },
-            { title: "✅ 해결된 내용:", lines: resolvedLines },
-            { title: "📊 고객 감정:", lines: emotionLines },
-            { title: "⚠️ 긴급도:", lines: urgencyLines },
-            { title: "📈 상담 진행 상황:", lines: progressLines },
-            { title: "💡 추가 정보:", lines: additionalLines },
-        ];
-
-        let svgContent = "";
-        for (const section of sections) {
-            svgContent += `    <text x="50" y="${y}" class="section">${section.title}</text>\n`;
-            y += 25;
-            for (const line of section.lines) {
-                svgContent += `    <text x="50" y="${y}" class="content">${line}</text>\n`;
-                y += 20;
-            }
-            y += 10; // 섹션 간 여백
-        }
-
-        const footerY = y + 20;
-        const finalHeight = footerY + 50;
-
-        const svg = `<svg width="${width}" height="${finalHeight}" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-        <style>
-            .title { font-family: Arial, sans-serif; font-size: 24px; font-weight: bold; fill: #0066cc; }
-            .section { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #333; }
-            .content { font-family: Arial, sans-serif; font-size: 14px; fill: #666; }
-        </style>
-    </defs>
-    
-    <!-- Background -->
-    <rect width="100%" height="100%" fill="#ffffff"/>
-    
-    <!-- Header -->
-    <text x="50" y="40" class="title">🔍 고객 상담 요약 보고서</text>
-    <text x="50" y="65" class="content">생성일: ${new Date().toLocaleString(
-        "ko-KR"
-    )}</text>
-    
-    <!-- Content -->
-${svgContent}    
-    <!-- Footer -->
-    <text x="50" y="${footerY}" class="content" style="font-size: 12px; opacity: 0.7;">이 보고서는 AI를 통해 자동 생성되었습니다.</text>
-</svg>`;
-
-        // SVG를 Buffer로 변환
-        return Buffer.from(svg, "utf-8");
-    }
-
-    // HTML 템플릿 생성
-    _generateSummaryHTML(summaryData, options = {}) {
-        const { theme, includeHeader, includeFooter } = options;
-        const { summary, sessionId, timestamp } = summaryData;
-
-        const isDark = theme === "dark";
-        const bgColor = isDark ? "#1a1a1a" : "#ffffff";
-        const textColor = isDark ? "#ffffff" : "#333333";
-        const cardBg = isDark ? "#2d2d2d" : "#f8f9fa";
-
-        const urgencyColors = {
-            low: "#28a745",
-            medium: "#ffc107",
-            high: "#dc3545",
-        };
-
-        const sentimentIcons = {
-            positive: "😊",
-            neutral: "😐",
-            negative: "😞",
-        };
-
-        return `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: ${bgColor};
-            color: ${textColor};
-            margin: 0;
-            padding: 20px;
-            line-height: 1.6;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .header {
-            text-align: center;
-            padding: 20px 0;
-            border-bottom: 2px solid #e0e0e0;
-            margin-bottom: 30px;
-        }
-        .title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .subtitle {
-            font-size: 14px;
-            opacity: 0.7;
-        }
-        .card {
-            background: ${cardBg};
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .card-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #0066cc;
-        }
-        .issue-item, .keypoint-item {
-            margin-bottom: 8px;
-            padding-left: 20px;
-            position: relative;
-        }
-        .issue-item:before, .keypoint-item:before {
-            content: "•";
-            position: absolute;
-            left: 0;
-            color: #0066cc;
-            font-weight: bold;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-top: 15px;
-        }
-        .stat-item {
-            text-align: center;
-            padding: 10px;
-            background: rgba(0, 102, 204, 0.1);
-            border-radius: 4px;
-        }
-        .stat-value {
-            font-size: 20px;
-            font-weight: bold;
-            color: #0066cc;
-        }
-        .urgency-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-            background: ${urgencyColors[summary.urgency] || "#6c757d"};
-        }
-        .sentiment {
-            font-size: 16px;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e0e0e0;
-            font-size: 12px;
-            opacity: 0.7;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        ${
-            includeHeader
-                ? `
-        <div class="header">
-            <div class="title">고객 상담 요약 보고서</div>
-            <div class="subtitle">Session ID: ${sessionId}</div>
-            <div class="subtitle">생성일: ${new Date(timestamp).toLocaleString(
-                "ko-KR"
-            )}</div>
-        </div>
-        `
-                : ""
-        }
-
-        <div class="card">
-            <div class="card-title">📋 상담 주제</div>
-            <div style="font-size: 16px; font-weight: 500;">${
-                summary.title
-            }</div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">❓ 주요 문의사항</div>
-            ${summary.mainIssues
-                .map((issue) => `<div class="issue-item">${issue}</div>`)
-                .join("")}
-        </div>
-
-        <div class="card">
-            <div class="card-title">💡 핵심 내용</div>
-            ${summary.keyPoints
-                .map((point) => `<div class="keypoint-item">${point}</div>`)
-                .join("")}
-        </div>
-
-        <div class="card">
-            <div class="card-title">✅ 해결 내용</div>
-            <div>${summary.resolution}</div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">📊 상담 정보</div>
-            <div style="margin-bottom: 15px;">
-                <strong>카테고리:</strong> ${summary.category} |
-                <strong>긴급도:</strong> <span class="urgency-badge">${summary.urgency.toUpperCase()}</span> |
-                <strong>감정:</strong> <span class="sentiment">${
-                    sentimentIcons[summary.sentiment]
-                } ${summary.sentiment}</span>
-            </div>
-            <div style="margin-bottom: 10px;">
-                <strong>추가 조치 필요:</strong> ${
-                    summary.followUpNeeded ? "⚠️ 예" : "✅ 아니오"
-                }
-            </div>
-            
-            ${
-                summary.statistics
-                    ? `
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-value">${summary.statistics.totalMessages}</div>
-                    <div>총 메시지</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">${summary.statistics.duration}</div>
-                    <div>상담 시간</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">${summary.statistics.userMessages}</div>
-                    <div>고객 메시지</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">${summary.statistics.avgResponseTime}</div>
-                    <div>평균 응답시간</div>
-                </div>
-            </div>
-            `
-                    : ""
-            }
-        </div>
-
-        ${
-            includeFooter
-                ? `
-        <div class="footer">
-            이 보고서는 AI를 통해 자동 생성되었습니다.<br>
-            자세한 내용은 원본 대화 기록을 참조하세요.
-        </div>
-        `
-                : ""
-        }
-    </div>
-</body>
-</html>`;
-    }
-
-    // 시간 포맷 유틸리티
-    _formatDuration(milliseconds) {
-        const seconds = Math.floor(milliseconds / 1000);
-        const minutes = Math.floor(seconds / 60);
-        const hours = Math.floor(minutes / 60);
-
-        if (hours > 0) {
-            return `${hours}시간 ${minutes % 60}분`;
-        } else if (minutes > 0) {
-            return `${minutes}분 ${seconds % 60}초`;
-        } else {
-            return `${seconds}초`;
-        }
+        // 구조화된 내용이 없으면 원본 텍스트 사용
+        return (
+            formattedContent ||
+            `<div class="progress-item">${progressText}</div>`
+        );
     }
 
     // HTML 템플릿 생성 (Puppeteer용)
@@ -751,6 +310,29 @@ ${svgContent}
             font-size: 16px;
             line-height: 1.7;
             word-wrap: break-word;
+        }
+        .progress-detailed {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #0066cc;
+        }
+        .progress-item {
+            margin-bottom: 12px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .progress-item:before {
+            content: "▶";
+            position: absolute;
+            left: 0;
+            color: #0066cc;
+            font-size: 12px;
+        }
+        .progress-category {
+            font-weight: bold;
+            color: #0066cc;
+            margin-bottom: 5px;
         }
         .two-column {
             display: grid;
@@ -864,7 +446,9 @@ ${svgContent}
             ? `
     <div class="section">
         <div class="section-title">📈 상담 진행 상황</div>
-        <div class="section-content">${parsed.progress}</div>
+        <div class="section-content progress-detailed">
+            ${this._formatProgressContent(parsed.progress)}
+        </div>
     </div>
     `
             : ""
@@ -954,124 +538,6 @@ ${svgContent}
         if (followUpMatch) result.followUp = followUpMatch[1].trim();
 
         return result;
-    }
-
-    // 간단한 HTML 보고서 생성
-    _generateReportHTML(summaryResult, parsed, options = {}) {
-        const { theme = "light" } = options;
-        const { sessionId, timestamp } = summaryResult;
-
-        const isDark = theme === "dark";
-        const bgColor = isDark ? "#1a1a1a" : "#ffffff";
-        const textColor = isDark ? "#ffffff" : "#333333";
-
-        return `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: ${bgColor}; color: ${textColor}; margin: 20px; line-height: 1.6; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .header { text-align: center; padding: 20px; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
-        .card { background: ${
-            isDark ? "#2d2d2d" : "#f8f9fa"
-        }; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
-        .card-title { font-size: 18px; font-weight: bold; color: #0066cc; margin-bottom: 10px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🔍 고객 상담 요약 보고서</h1>
-            <p>Session ID: ${sessionId}</p>
-            <p>생성일: ${new Date(timestamp).toLocaleString("ko-KR")}</p>
-        </div>
-
-        ${
-            parsed.topic
-                ? `
-        <div class="card">
-            <div class="card-title">📋 상담 주제</div>
-            <div>${parsed.topic}</div>
-        </div>
-        `
-                : ""
-        }
-
-        ${
-            parsed.issues
-                ? `
-        <div class="card">
-            <div class="card-title">❓ 주요 문의사항</div>
-            <div>${parsed.issues}</div>
-        </div>
-        `
-                : ""
-        }
-
-        ${
-            parsed.resolved
-                ? `
-        <div class="card">
-            <div class="card-title">✅ 해결된 내용</div>
-            <div>${parsed.resolved}</div>
-        </div>
-        `
-                : ""
-        }
-
-        ${
-            parsed.remaining
-                ? `
-        <div class="card">
-            <div class="card-title">⚠️ 남은 이슈</div>
-            <div>${parsed.remaining}</div>
-        </div>
-        `
-                : ""
-        }
-
-        ${
-            parsed.progress
-                ? `
-        <div class="card">
-            <div class="card-title">📈 상담 진행 상황</div>
-            <div>${parsed.progress}</div>
-        </div>
-        `
-                : ""
-        }
-
-        ${
-            parsed.additional
-                ? `
-        <div class="card">
-            <div class="card-title">💡 추가 정보</div>
-            <div>${parsed.additional}</div>
-        </div>
-        `
-                : ""
-        }
-
-        <div class="card">
-            <div class="card-title">📊 상담 정보</div>
-            <p><strong>고객 감정:</strong> ${parsed.emotion || "N/A"}</p>
-            <p><strong>긴급도:</strong> ${parsed.urgency || "N/A"}</p>
-            <p><strong>후속 조치:</strong> ${parsed.followUp || "N/A"}</p>
-        </div>
-
-        <div class="card">
-            <div class="card-title">📝 원본 요약</div>
-            <div style="white-space: pre-wrap;">${summaryResult.summary}</div>
-        </div>
-
-        <div style="text-align: center; margin-top: 30px; font-size: 12px; opacity: 0.7;">
-            이 보고서는 AI를 통해 자동 생성되었습니다.
-        </div>
-    </div>
-</body>
-</html>`;
     }
 }
 
