@@ -312,6 +312,15 @@ class LLMService extends EventEmitter {
 
             this._emit("realtime.raw", { sessionId, data });
             switch (data.type) {
+                // 오디오 입력 스트림
+                case "input_audio_buffer.committed":
+                    this._emit("input_audio_buffer_committed", {
+                        sessionId,
+                        itemId: data.item_id
+                        // output_index: data.output_index,
+                    });
+                    break;
+                
                 // 텍스트/오디오 응답 스트림
                 case "response.text.delta":
                     this._emit("text_delta", {

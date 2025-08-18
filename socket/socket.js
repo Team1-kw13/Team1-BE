@@ -62,7 +62,7 @@ class Socket {
             // 연결당 1 세션
             const sessionId = genId("sonj");
             ws._sessionId = sessionId;
-            this.sessions.set(sessionId, { turnCount: 0 });
+            this.sessions.set(sessionId, { turn: [] });
 
             try {
                 await llmService.createRealtimeSession(
@@ -258,12 +258,7 @@ class Socket {
                     return;
                 }
                 const out = mapper(data);
-                const s = this.sessions.get(sessionId);
-                const turn_index = s?.turnCount ?? 0;
-                if (
-                    out.type == "response.audio.delta" &&
-                    ws.readyState === ws.OPEN
-                ) {
+                if (out.type == "response.audio.delta" && ws.readyState === ws.OPEN) {
                     try {
                         const buf = audioService.fromBase64Pcm(out.delta);
                         ws.send(buf, { binary: true });
@@ -290,54 +285,72 @@ class Socket {
             ws._llmHandlers.push({ event, handler });
         };
 
+        // text
         fwd("text_delta", ({ delta }) => {
-            const s = this.sessions.get(sessionId);
             return {
                 type: "response.text.delta",
-                output_index: s?.turnCount ?? 0,
+                output_index: this._getTurnCount(sessionId),
                 delta,
             };
         });
+
         fwd("text_done", () => {
-            const s = this.sessions.get(sessionId);
             return {
                 type: "response.text.done",
-                output_index: s?.turnCount ?? 0,
+                output_index: this._getTurnCount(sessionId),
             };
         });
 
         fwd("audio_transcript_delta", ({ delta }) => {
-            const s = this.sessions.get(sessionId);
             return {
                 type: "response.audio_transcript.delta",
-                output_index: s?.turnCount ?? 0,
+                output_index: this._getTurnCount(sessionId),
                 delta,
             };
         });
 
         fwd("audio_transcript_done", () => {
-            const s = this.sessions.get(sessionId);
             return {
                 type: "response.audio_transcript.done",
-                output_index: s?.turnCount ?? 0,
+                output_index: this._getTurnCount(sessionId),
             };
         });
 
+        // audio
         fwd("audio_delta", ({ delta }) => {
-            const s = this.sessions.get(sessionId);
             return {
                 type: "response.audio.delta",
-                output_index: s?.turnCount ?? 0,
+                output_index: this._getTurnCount(sessionId),
                 delta,
             };
         });
 
         fwd("audio_done", () => {
-            const s = this.sessions.get(sessionId);
             return {
                 type: "response.audio.done",
-                output_index: s?.turnCount ?? 0,
+                output_index: this._getTurnCount(sessionId),
             };
+        });
+    
+        // transcript
+        fwd("input_audio_transcript_delta", ({ delta, itemId }) => {
+            return {
+                type: "input_audio_transcription.delta",
+                output_index: this._getTurnIdx(sessionId, itemId),
+                delta,
+            };
+        });
+
+        fwd("input_audio_transcript_done", ({ itemId }) => {
+            return {
+                type: "input_audio_transcription.done",
+                output_index: this._getTurnIdx(sessionId, itemId),
+            };
+        });
+        
+        // committed
+        fwd("input_audio_buffer_committed", ({ itemId }) => {
+            this._addTurn(sessionId, itemId)
         });
 
         const onErr = ({ sessionId: sid, error }) => {
@@ -365,11 +378,25 @@ class Socket {
         ws._llmHandlers.push({ event: "closed", handler: onClosed });
     }
 
-    _addTurnCount(sessionId) {
+    _addTurn(sessionId, itemId='text') {
         const s = this.sessions.get(sessionId);
-        if (s) {
-            s.turnCount += 1;
-        }
+        if (!s) { return; }
+
+        if (!Array.isArray(s.turn)) { s.turn = []; }
+        s.turn.push(itemId);
+    }
+
+    _getTurnCount(sessionId) {
+        const s = this.sessions.get(sessionId);
+        return Array.isArray(s?.turn) ? s.turn.length : 0;
+    }
+
+    _getTurnIdx(sessionId, itemId) {
+        const s = this.sessions.get(sessionId);
+        if (!Array.isArray(s?.turn)) return 0;
+        
+        const idx = s.turn.indexOf(itemId);
+        return idx !== -1 ? idx : 0;
     }
 
     _cleanupLLMForwarding(ws) {
