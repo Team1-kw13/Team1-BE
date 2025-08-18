@@ -371,29 +371,67 @@ class LLMService extends EventEmitter {
             // 함수 호출 인자 완료 → 실제 툴 실행
             if (data.type === "response.function_call.arguments.done") {
                 const calls = this.fcalls.get(sessionId) || new Map();
-                const info = calls.get(data.call_id);
-                if (!info) return;
-                let args = {};
-                try {
-                    args = info.args ? JSON.parse(info.args) : {};
-                } catch {}
+              
+                const argsStr = calls.get(data.call_id) || "";
+               
                 calls.delete(data.call_id);
                 this.fcalls.set(sessionId, calls);
+                
+                const toolName =
+                    typeof data.name === "string" && data.name.length > 0
+                        ? data.name
+                        : null;
+                if (!toolName) {
+                    this._send(ws, {
+                        type: "conversation.item.create",
+                        item: {
+                            type: "function_call_output",
+                            call_id: data.call_id,
+                            output: JSON.stringify({ error: "missing tool name" }),
+                        },
+                    });
+                    this._send(ws, { type: "response.create" });
+                    return;
+                }
+    
+                // JSON 인자 파싱
+                let parsedArgs = {};
+                try {
+                    parsedArgs = argsStr ? JSON.parse(argsStr) : {};
+                } catch (e) {
+                    this._send(ws, {
+                        type: "conversation.item.create",
+                        item: {
+                            type: "function_call_output",
+                            call_id: data.call_id,
+                            output: JSON.stringify({
+                                error: "invalid JSON arguments",
+                                detail: String(e),
+                            }),
+                        },
+                    });
+                    this._send(ws, { type: "response.create" });
+                    return;
+                }
 
                 try {
                     await this._handleToolCall(
                         ws,
                         sessionId,
-                        info.name,
+                        toolName,
                         data.call_id,
-                        args
+                        parsedArgs,
                     );
                 } catch (err) {
                     this._send(ws, {
-                        type: "tool.output",
-                        tool_call_id: data.call_id,
-                        output: JSON.stringify({ error: String(err) }),
+                        type: "conversation.item.create",
+                        item: {
+                            type: "function_call_output",
+                            call_id: data.call_id,
+                            output: JSON.stringify({ error: String(err) }),
+                        },
                     });
+                    this._send(ws, { type: "response.create" });
                 }
                 return;
             }

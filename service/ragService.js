@@ -2,7 +2,7 @@ const openai = require("../config/openai");
 const { z } = require("zod");
 const { zodTextFormat } = require("openai/helpers/zod");
 
-const VECTOR_STORE_ID = "vs_6896108447848191b1aca6b1aff8310b";
+const VECTOR_STORE_ID = "vs_68a25581cb148191a13fcca31d0d6992";
 
 function truncate(s, max = 400) {
     if (!s) return "";
@@ -34,9 +34,18 @@ class RAGService {
             text: z.string(),
         });
 
-        // 최상위를 object로 감싸기
-        const SearchResults = z.object({
-            results: z.array(SearchItem).max(topK),
+        const items = (Array.isArray(search_result?.data) ? search_result.data : []).map((data) => {
+            const text = Array.isArray(data?.content)
+                ? data.content
+                    .map((c) => (typeof c?.text === "string" ? c.text : ""))
+                    .join("")
+                : "";
+            return {
+                file_id: data?.file_id ?? null,
+                filename: data?.filename ?? null,
+                score: typeof data?.score === "number" ? data.score : 0,
+                text,
+            };
         });
 
         const resp = await openai.responses.parse({
