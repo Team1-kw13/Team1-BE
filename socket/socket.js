@@ -35,9 +35,9 @@ function sanitizeError(err) {
 
 class Socket {
     constructor() {
-        this.wss = null;
-        this._hb = null;
-        this.sessions = new Map(); // sessionId -> { turn: [itemId | "text"] }
+      this.wss = null;
+      this._hb = null;
+      this.sessions = new Map(); // sessionId -> { turn: [itemId | "text"], userTranscript: String, coord: [ float ]}
     }
 
     init(server) {
@@ -66,6 +66,7 @@ class Socket {
             this.sessions.set(sessionId, {
                 turn: [],
                 userTranscript: "", // 사용자 음성 전사 누적
+                coord: [0.0, 0.0]
             });
 
             try {
@@ -120,6 +121,11 @@ class Socket {
                 }
                 if (channel === "sonju:summarize") {
                     return this._handleSummarize(ws, sessionId);
+                }
+                if (channel === "sonju:currentCoord") {
+                      const s = this.sessions.get(sessionId);
+                      if (s) s.coord = [msg.lat ?? 0.0, msg.lon ?? 0.0];
+                      return;      
                 }
 
                 // 수신 전용 채널은 클라 → 서버 요청 무시
