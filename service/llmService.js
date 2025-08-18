@@ -227,58 +227,6 @@ class LLMService extends EventEmitter {
         this._send(ws, { type: "input_audio_buffer.clear" });
     }
 
-    // RAG: 컨텍스트 축소, 캐시 5분, 동일 instructions면 업데이트 생략
-    // async updateSessionWithRAG(
-    //     sessionId,
-    //     query,
-    //     sessionContext = "",
-    //     audioContext = ""
-    // ) {
-    //     const ws = this._needWs(sessionId);
-    //     const normQuery = this._normalize(query);
-
-    //     const cached = this.ragCache.get(sessionId);
-    //     if (
-    //         cached &&
-    //         cached.query === normQuery &&
-    //         Date.now() - cached.ts < this.ragCacheMs
-    //     ) {
-    //         const newInstr = this._buildSystemPrompt(
-    //             cached.ragContext,
-    //             sessionContext,
-    //             audioContext
-    //         );
-    //         await this._maybeUpdateInstructions(ws, sessionId, newInstr);
-    //         return { ragContext: cached.ragContext, sources: cached.sources };
-    //     }
-
-    //     const results = await ragService.searchVectorDB(normQuery, {
-    //         topK: 2,
-    //         threshold: 0.3,
-    //         maxChars: 200,
-    //     });
-    //     const ragContext = ragService.formatContextForLLM(results);
-    //     const sources = results.map(
-    //         (r) => r.metadata?.file_id || r.metadata?.source || "vector_store"
-    //     );
-
-    //     this.ragCache.set(sessionId, {
-    //         query: normQuery,
-    //         ragContext,
-    //         sources,
-    //         ts: Date.now(),
-    //     });
-
-    //     const newInstr = this._buildSystemPrompt(
-    //         ragContext,
-    //         sessionContext,
-    //         audioContext
-    //     );
-    //     await this._maybeUpdateInstructions(ws, sessionId, newInstr);
-
-    //     return { ragContext, sources };
-    // }
-
     // 내부 유틸
     _needWs(sessionId) {
         const ws = this.clients.get(sessionId);
