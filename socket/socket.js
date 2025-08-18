@@ -256,14 +256,6 @@ class Socket {
             const session = this.sessions.get(sessionId);
             if (!session?.lastUserInput?.trim()) return;
 
-            const currentTurn = this._getTurnCount(sessionId);
-
-            // 이미 이 턴에서 제안 질문을 생성했으면 스킵
-            if (generatedTurns.has(currentTurn)) return;
-
-            // 이 턴을 생성 완료로 마킹
-            generatedTurns.add(currentTurn);
-
             const context = session.lastUserInput;
             const suggestions = await suggestionService.generate(context);
 
