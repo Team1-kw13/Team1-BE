@@ -38,6 +38,7 @@ class Socket {
         this.wss = null;
         this._hb = null;
         this.sessions = new Map(); // sessionId -> { turnCount: number }
+        this.suggestionGenerated = new Map(); // sessionId -> Set<turnCount> (턴별 중복 방지)
     }
 
     init(server) {
@@ -135,6 +136,7 @@ class Socket {
                     await llmService.closeSession(sessionId);
                 } catch {}
                 this.sessions.delete(sessionId);
+                this.suggestionGenerated.delete(sessionId);
             });
         });
 
@@ -253,6 +255,20 @@ class Socket {
         try {
             const session = this.sessions.get(sessionId);
             if (!session?.lastUserInput) return;
+
+            const currentTurn = this._getTurnCount(sessionId);
+            
+            // 이 세션의 제안 생성 턴 Set 가져오기 (없으면 새로 생성)
+            if (!this.suggestionGenerated.has(sessionId)) {
+                this.suggestionGenerated.set(sessionId, new Set());
+            }
+            const generatedTurns = this.suggestionGenerated.get(sessionId);
+            
+            // 이미 이 턴에서 제안 질문을 생성했으면 스킵
+            if (generatedTurns.has(currentTurn)) return;
+            
+            // 이 턴을 생성 완료로 마킹
+            generatedTurns.add(currentTurn);
 
             const context = session.lastUserInput;
             const suggestions = await suggestionService.generate(context);
