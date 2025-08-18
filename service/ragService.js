@@ -1,6 +1,6 @@
 const openai = require("../config/openai");
 
-const VECTOR_STORE_ID = "vs_6896108447848191b1aca6b1aff8310b";
+const VECTOR_STORE_ID = "vs_68a25581cb148191a13fcca31d0d6992";
 
 class RAGService {
     async searchVectorDB(query, options = {}) {
@@ -26,21 +26,18 @@ class RAGService {
             rewrite_query: false,
         });
 
-        const obj = {
-            file_id: "",
-            filename: "",
-            score: 0,
-            text: "",
-        };
-        let items = [];
-        search_result.data.forEach((data) => {
-            obj.file_id = data.file_id;
-            obj.filename = data.filename;
-            obj.score = data.score;
-            data.content.forEach((item) => {
-                obj.text += item.text;
-            });
-            items.push(obj);
+        const items = (Array.isArray(search_result?.data) ? search_result.data : []).map((data) => {
+            const text = Array.isArray(data?.content)
+                ? data.content
+                    .map((c) => (typeof c?.text === "string" ? c.text : ""))
+                    .join("")
+                : "";
+            return {
+                file_id: data?.file_id ?? null,
+                filename: data?.filename ?? null,
+                score: typeof data?.score === "number" ? data.score : 0,
+                text,
+            };
         });
 
         return items.map((item) => ({
