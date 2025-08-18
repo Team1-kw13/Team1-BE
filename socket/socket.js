@@ -391,7 +391,7 @@ class Socket {
 
     _getTurnCount(sessionId) {
         const s = this.sessions.get(sessionId);
-        return Array.isArray(s?.turn) ? s.turn.length : 0;
+        return Array.isArray(s?.turn) ? s.turn.length - 1 : 0;
     }
 
     _getTurnIdx(sessionId, itemId) {
