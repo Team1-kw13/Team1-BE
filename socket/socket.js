@@ -208,7 +208,6 @@ class Socket {
                 output: `선택된 프리프롬프트: ${selected}`,
             });
         }
-
         // 그 외 이벤트는 무시
     }
 
@@ -333,6 +332,9 @@ class Socket {
     
         // transcript
         fwd("input_audio_transcript_delta", ({ delta, itemId }) => {
+            console.log(delta)
+            console.log(itemId)
+            console.log(this._getTurnIdx(sessionId, itemId))
             return {
                 type: "input_audio_transcription.delta",
                 output_index: this._getTurnIdx(sessionId, itemId),
@@ -348,9 +350,9 @@ class Socket {
         });
         
         // committed
-        fwd("input_audio_buffer_committed", ({ itemId }) => {
-            this._addTurn(sessionId, itemId)
-        });
+        const onCommitted = ({ itemId }) => {
+            this._addTurn(sessionId, itemId);
+        };
 
         const onErr = ({ sessionId: sid, error }) => {
             if (sid !== sessionId) {
@@ -371,8 +373,10 @@ class Socket {
             this._sendError(ws, c, r);
         };
 
+        llmService.on("input_audio_buffer_committed", onCommitted);
         llmService.on("error", onErr);
         llmService.on("closed", onClosed);
+        ws._llmHandlers.push({ event: "input_audio_buffer_committed", handler: onCommitted })
         ws._llmHandlers.push({ event: "error", handler: onErr });
         ws._llmHandlers.push({ event: "closed", handler: onClosed });
     }
