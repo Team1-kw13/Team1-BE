@@ -356,27 +356,22 @@ class LLMService extends EventEmitter {
                 });
 
             // 함수 호출 인자 스트리밍
-            if (data.type === "response.function_call.arguments.delta") {
+            if (data.type === "response.function_call_arguments.delta") {
                 const calls = this.fcalls.get(sessionId) || new Map();
-                const prev = calls.get(data.call_id) || {
-                    name: data.name,
-                    args: "",
-                };
-                prev.args += data.delta || "";
+                let prev = calls.get(data.call_id) || ""
+                prev += data.delta || "";
                 calls.set(data.call_id, prev);
                 this.fcalls.set(sessionId, calls);
                 return;
-            }
+            } //name은 오지 않음
 
             // 함수 호출 인자 완료 → 실제 툴 실행
-            if (data.type === "response.function_call.arguments.done") {
+            if (data.type === "response.function_call_arguments.done") {
                 const calls = this.fcalls.get(sessionId) || new Map();
-                const info = calls.get(data.call_id);
-                if (!info) return;
-                let args = {};
-                try {
-                    args = info.args ? JSON.parse(info.args) : {};
-                } catch {}
+                const args = calls.get(data.call_id);
+                if (!args) {
+                    return;
+                }
                 calls.delete(data.call_id);
                 this.fcalls.set(sessionId, calls);
 
@@ -384,14 +379,14 @@ class LLMService extends EventEmitter {
                     await this._handleToolCall(
                         ws,
                         sessionId,
-                        info.name,
+                        data.name,
                         data.call_id,
-                        args
+                        args ? JSON.parse(args) : {},
                     );
                 } catch (err) {
                     this._send(ws, {
-                        type: "tool.output",
-                        tool_call_id: data.call_id,
+                        type: "function_call_output",
+                        call_id: data.call_id,
                         output: JSON.stringify({ error: String(err) }),
                     });
                 }
@@ -427,33 +422,45 @@ class LLMService extends EventEmitter {
         const last = this.lastToolAt.get(sessionId) || 0;
         if (Date.now() - last < this.minToolIntervalMs) {
             this._send(ws, {
-                type: "tool.output",
-                tool_call_id: callId,
-                output: JSON.stringify({
-                    skipped: true,
-                    reason: "rate_limited",
-                }),
+                type: "conversation.item.create",
+                item: {
+                    type: "function_call_output",
+                    call_id: callId,
+                    output: JSON.stringify({
+                        skipped: true,
+                        reason: "rate_limited",
+                    }),
+                },
             });
+            this._send(ws, { type: "response.create" });
             return;
         }
         this.lastToolAt.set(sessionId, Date.now());
 
         if (name !== "rag_search") {
             this._send(ws, {
-                type: "tool.output",
-                tool_call_id: callId,
-                output: JSON.stringify({ error: "unknown tool" }),
+                type: "conversation.item.create",
+                item: {
+                    type: "function_call_output",
+                    call_id: callId,
+                    output: JSON.stringify({ error: "unknown tool" }),
+                },
             });
+            this._send(ws, { type: "response.create" });
             return;
         }
 
         const query = String(args.query || "").trim();
         if (!query) {
             this._send(ws, {
-                type: "tool.output",
-                tool_call_id: callId,
-                output: JSON.stringify({ error: "empty query" }),
+                type: "conversation.item.create",
+                item: {
+                    type: "function_call_output",
+                    call_id: callId,
+                    output: JSON.stringify({ error: "empty query" }),
+                }
             });
+            this._send(ws, { type: "response.create" });
             return;
         }
 
@@ -490,17 +497,21 @@ class LLMService extends EventEmitter {
             }
 
             this._send(ws, {
-                type: "tool.output",
-                tool_call_id: callId,
-                output: JSON.stringify({
-                    context: message,
-                    sources: [],
-                    count: 0,
-                    mode,
-                    lowConfidence: true,
-                    lowConfidenceCount: newCount,
-                }),
+                type: "conversation.item.create",
+                item: {
+                    type: "function_call_output",
+                    call_id: callId,
+                    output: JSON.stringify({
+                        context: message,
+                        sources: [],
+                        count: 0,
+                        mode,
+                        lowConfidence: true,
+                        lowConfidenceCount: newCount,
+                    }),
+                },
             });
+            this._send(ws, { type: "response.create" });
             return;
         }
 
@@ -514,15 +525,19 @@ class LLMService extends EventEmitter {
 
         // 세션 전역 instructions를 건드리지 않고, 한 턴 안에서만 활용하도록 tool.output 반환
         this._send(ws, {
-            type: "tool.output",
-            tool_call_id: callId,
-            output: JSON.stringify({
-                context,
-                sources,
-                count: results.length,
-                mode,
-            }),
+            type: "conversation.item.create",
+            item: {
+                type: "function_call_output",
+                call_id: callId,
+                output: JSON.stringify({
+                    context,
+                    sources,
+                    count: results.length,
+                    mode,
+                }),
+            },
         });
+        this._send(ws, { type: "response.create" });
     }
 
     _emit(event, payload) {
