@@ -1,6 +1,10 @@
 const openai = require("../config/openai");
 
-const VECTOR_STORE_ID = "vs_68a25581cb148191a13fcca31d0d6992";
+// Vector Store ID 분리
+const VECTOR_STORE_IDS = {
+    DISTRICT_OFFICE: "vs_68a5608c437c8191b1f78636fd492237", // 동사무소
+    FAQ: "vs_68a5608cb5f48191a8e896f1845bef8a", // FAQ용
+};
 
 class RAGService {
     async searchVectorDB(query, options = {}) {
@@ -13,24 +17,46 @@ class RAGService {
             .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
     }
 
-    async semanticSearch(query, { topK = 3, maxChars = 400 } = {}) {
-        if (typeof VECTOR_STORE_ID !== "string") {
+    async semanticSearch(
+        query,
+        { topK = 3, maxChars = 400, vectorStoreId = null } = {}
+    ) {
+        const targetVectorStoreId = vectorStoreId;
+
+        if (typeof targetVectorStoreId !== "string") {
             throw new Error(
-                `VECTOR_STORE_ID must be string. got: ${typeof VECTOR_STORE_ID}`
+                `VECTOR_STORE_ID must be string. got: ${typeof targetVectorStoreId}`
             );
         }
 
-        const search_result = await openai.vectorStores.search(VECTOR_STORE_ID, {
-            query: query,
-            max_num_results: topK,
-            rewrite_query: false,
-        });
+        let search_result;
+        try {
+            search_result = await openai.vectorStores.search(
+                targetVectorStoreId,
+                {
+                    query: query,
+                    max_num_results: topK,
+                    rewrite_query: false,
+                }
+            );
 
-        const items = (Array.isArray(search_result?.data) ? search_result.data : []).map((data) => {
+            if (search_result?.data?.length > 0) {
+            }
+        } catch (error) {
+            console.error(
+                `Vector Store 검색 오류 (${targetVectorStoreId}):`,
+                error.message
+            );
+            throw error;
+        }
+
+        const items = (
+            Array.isArray(search_result?.data) ? search_result.data : []
+        ).map((data) => {
             const text = Array.isArray(data?.content)
                 ? data.content
-                    .map((c) => (typeof c?.text === "string" ? c.text : ""))
-                    .join("")
+                      .map((c) => (typeof c?.text === "string" ? c.text : ""))
+                      .join("")
                 : "";
             return {
                 file_id: data?.file_id ?? null,
@@ -77,6 +103,76 @@ class RAGService {
                     }`
             )
             .join("\n\n");
+    }
+
+    // 동사무소 전용 검색
+    async searchDistrictOffice(query, userCoord = null, options = {}) {
+        const { topK = 3, threshold = 0, maxChars = 400 } = options;
+
+        // 사용자 위치가 있으면 쿼리에 위치 정보 추가
+        let searchQuery = query;
+        if (userCoord && Array.isArray(userCoord) && userCoord.length >= 2) {
+            const [lat, lon] = userCoord;
+            // 유효한 좌표인 경우 위치 정보 추가
+            if (lat !== 0 || lon !== 0) {
+                searchQuery = `${query} 위치: 위도 ${lat}, 경도 ${lon} 근처`;
+            } else {
+                // [0,0] 좌표인 경우 노원구를 기본으로 설정
+                searchQuery = `${query} 노원구`;
+            }
+        } else {
+            // 좌표가 없는 경우에도 노원구 기본 설정
+            searchQuery = `${query} 노원구`;
+        }
+
+        const results = await this.semanticSearch(searchQuery, {
+            topK,
+            maxChars,
+            vectorStoreId: VECTOR_STORE_IDS.DISTRICT_OFFICE,
+        });
+
+        // 노원구 결과 우선순위 적용
+        const prioritizedResults = this._prioritizeNowonResults(results);
+
+        return prioritizedResults
+            .filter(
+                (r) => (typeof r.score === "number" ? r.score : 0) >= threshold
+            )
+            .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    }
+
+    // 노원구 결과 우선순위 적용
+    _prioritizeNowonResults(results) {
+        return results.map((result) => {
+            const content = result.content || "";
+            const isNowonRelated = /노원구|노원|상계|중계|월계|공릉|하계/.test(
+                content
+            );
+
+            if (isNowonRelated) {
+                // 노원구 관련 결과는 점수를 약간 높여줌
+                result.score = Math.min((result.score || 0) + 0.1, 1.0);
+            }
+
+            return result;
+        });
+    }
+
+    // FAQ 전용 검색
+    async searchFAQ(query, options = {}) {
+        const { topK = 3, threshold = 0, maxChars = 400 } = options;
+
+        const results = await this.semanticSearch(query, {
+            topK,
+            maxChars,
+            vectorStoreId: VECTOR_STORE_IDS.FAQ,
+        });
+
+        return results
+            .filter(
+                (r) => (typeof r.score === "number" ? r.score : 0) >= threshold
+            )
+            .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
     }
 }
 
