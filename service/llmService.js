@@ -77,15 +77,48 @@ class LLMService extends EventEmitter {
                 tools: [
                     {
                         type: "function",
-                        name: "rag_search",
+                        name: "district_office_search",
                         description:
-                            "사용자 발화에서 필요한 경우 관련 문서를 검색해 간결한 컨텍스트를 제공한다.",
+                            "동사무소, 주민센터, 구청, 행정복지센터와 관련된 모든 질문에 답변합니다. 전화번호, 주소, 위치, 업무시간, 민원업무, 증명서 발급 등 행정기관 정보를 검색할 때 사용하세요. 예: '노원구 동사무소', '주민센터 전화번호', '구청 위치', '민원 처리' 등",
                         parameters: {
                             type: "object",
                             properties: {
                                 query: {
                                     type: "string",
-                                    description: "검색 질의 문장",
+                                    description: "동사무소 관련 검색 질의 문장",
+                                },
+                                mode: {
+                                    type: "string",
+                                    enum: ["provisional", "final"],
+                                    description: "중간/최종 호출 모드",
+                                },
+                                topK: {
+                                    type: "integer",
+                                    minimum: 1,
+                                    maximum: 5,
+                                    default: 2,
+                                },
+                                threshold: {
+                                    type: "number",
+                                    minimum: 0,
+                                    maximum: 1,
+                                    default: 0.3,
+                                },
+                            },
+                            required: ["query"],
+                        },
+                    },
+                    {
+                        type: "function",
+                        name: "faq_search",
+                        description:
+                            "일반적인 자주 묻는 질문(FAQ)이나 행정서비스, 복지혜택, 정책정보에 대한 답변을 제공합니다. 주민등록, 등본발급, 복지혜택, 세금, 건강보험 등 일반 행정 문의사항을 검색할 때 사용하세요. 예: '등본 발급 방법', '복지 혜택', '건강보험' 등",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                query: {
+                                    type: "string",
+                                    description: "FAQ 관련 검색 질의 문장",
                                 },
                                 mode: {
                                     type: "string",
@@ -264,11 +297,11 @@ class LLMService extends EventEmitter {
                 case "input_audio_buffer.committed":
                     this._emit("input_audio_buffer_committed", {
                         sessionId,
-                        itemId: data.item_id
+                        itemId: data.item_id,
                         // output_index: data.output_index,
                     });
                     break;
-                
+
                 // 텍스트/오디오 응답 스트림
                 case "response.text.delta":
                     this._emit("text_delta", {
@@ -277,14 +310,14 @@ class LLMService extends EventEmitter {
                         // output_index: data.output_index,
                     });
                     break;
-                
+
                 case "response.text.done":
                     this._emit("text_done", {
                         sessionId,
                         // output_index: data.output_index,
                     });
                     break;
-                
+
                 case "response.audio.delta":
                     this._emit("audio_delta", {
                         sessionId,
@@ -292,21 +325,21 @@ class LLMService extends EventEmitter {
                         // output_index: data.output_index,
                     });
                     break;
-                
+
                 case "response.audio.done":
                     this._emit("audio_done", {
                         sessionId,
                         // output_index: data.output_index,
                     });
                     break;
-                
+
                 case "response.done":
                     this._emit("response_done", {
                         sessionId,
                         response: data.response,
                     });
                     break;
-                
+
                 case "response.audio_transcript.delta":
                     this._emit("audio_transcript_delta", {
                         sessionId,
@@ -314,7 +347,7 @@ class LLMService extends EventEmitter {
                         // output_index: data.output_index,
                     });
                     break;
-                
+
                 case "response.audio_transcript.done":
                     this._emit("audio_transcript_done", {
                         sessionId,
@@ -322,7 +355,7 @@ class LLMService extends EventEmitter {
                         // output_index: data.output_index,
                     });
                     break;
-                
+
                 // 전사 스트림
                 case "conversation.item.input_audio_transcription.delta":
                     this._emit("input_audio_transcript_delta", {
@@ -332,7 +365,7 @@ class LLMService extends EventEmitter {
                         // output_index: data.output_index,
                     });
                     break;
-                
+
                 case "conversation.item.input_audio_transcription.completed":
                     this._emit("input_audio_transcript_done", {
                         sessionId,
@@ -343,10 +376,11 @@ class LLMService extends EventEmitter {
                 // 함수 호출 인자 스트리밍
                 case "response.function_call_arguments.delta": {
                     const calls = this.fcalls.get(sessionId) || new Map();
-                    let prev = calls.get(data.call_id) || ""
+                    let prev = calls.get(data.call_id) || "";
                     prev += data.delta || "";
                     calls.set(data.call_id, prev);
                     this.fcalls.set(sessionId, calls);
+
                     break;
                 } //name은 오지 않음
 
@@ -354,10 +388,10 @@ class LLMService extends EventEmitter {
                 case "response.function_call_arguments.done": {
                     const calls = this.fcalls.get(sessionId) || new Map();
                     const argsStr = calls.get(data.call_id) || "";
-                    
+
                     calls.delete(data.call_id);
                     this.fcalls.set(sessionId, calls);
-                    
+
                     const toolName =
                         typeof data.name === "string" && data.name.length > 0
                             ? data.name
@@ -368,13 +402,15 @@ class LLMService extends EventEmitter {
                             item: {
                                 type: "function_call_output",
                                 call_id: data.call_id,
-                                output: JSON.stringify({ error: "missing tool name" }),
+                                output: JSON.stringify({
+                                    error: "missing tool name",
+                                }),
                             },
                         });
                         this._send(ws, { type: "response.create" });
                         break;
                     }
-        
+
                     // JSON 인자 파싱
                     let parsedArgs = {};
                     try {
@@ -401,7 +437,7 @@ class LLMService extends EventEmitter {
                             sessionId,
                             toolName,
                             data.call_id,
-                            parsedArgs,
+                            parsedArgs
                         );
                     } catch (err) {
                         this._send(ws, {
@@ -465,7 +501,7 @@ class LLMService extends EventEmitter {
         }
         this.lastToolAt.set(sessionId, Date.now());
 
-        if (name !== "rag_search") {
+        if (name !== "district_office_search" && name !== "faq_search") {
             this._send(ws, {
                 type: "conversation.item.create",
                 item: {
@@ -486,7 +522,7 @@ class LLMService extends EventEmitter {
                     type: "function_call_output",
                     call_id: callId,
                     output: JSON.stringify({ error: "empty query" }),
-                }
+                },
             });
             this._send(ws, { type: "response.create" });
             return;
@@ -506,7 +542,19 @@ class LLMService extends EventEmitter {
                   }
                 : { topK, threshold, maxChars: 200 };
 
-        const results = await ragService.searchVectorDB(query, opt);
+        let results;
+        if (name === "district_office_search") {
+            // 사용자 위치 정보 가져오기
+            const userCoord =
+                this.socketHandler?.sessions?.get(sessionId)?.coord;
+            results = await ragService.searchDistrictOffice(
+                query,
+                userCoord,
+                opt
+            );
+        } else if (name === "faq_search") {
+            results = await ragService.searchFAQ(query, opt);
+        }
 
         // 신뢰도 체크 - 결과가 없거나 가장 높은 점수가 threshold보다 낮으면 저신뢰도 메시지 반환
         if (results.length === 0 || (results[0]?.score || 0) < threshold) {
@@ -551,6 +599,11 @@ class LLMService extends EventEmitter {
             (r) => r.metadata?.file_id || r.metadata?.source || "vector_store"
         );
 
+        // 동사무소 검색인 경우 전화번호와 위치 정보 추출하여 웹소켓 전송
+        if (name === "district_office_search" && results.length > 0) {
+            this._extractAndSendOfficeInfo(results, sessionId);
+        }
+
         // 세션 전역 instructions를 건드리지 않고, 한 턴 안에서만 활용하도록 tool.output 반환
         this._send(ws, {
             type: "conversation.item.create",
@@ -565,7 +618,91 @@ class LLMService extends EventEmitter {
                 }),
             },
         });
-        this._send(ws, { type: "response.create" });
+        this._send(ws, {
+            type: "response.create",
+            response: { modalities: ["text"] },
+        });
+    }
+
+    // 동사무소 정보 추출 및 웹소켓 전송
+    _extractAndSendOfficeInfo(results, sessionId) {
+        if (!this.socketHandler) {
+            return;
+        }
+
+        if (!results.length) {
+            return;
+        }
+
+        // 가장 점수가 높은 결과에서 전화번호와 위치 정보 추출
+        const bestResult = results[0];
+        const content = bestResult.content || "";
+
+        // 전화번호 추출 - 더 포괄적인 패턴들
+        const phonePatterns = [
+            /(?:전화|TEL|Tel|연락처|☎|문의)[:\s]*([0-9-\s()]+)/gi,
+            /([0-9]{2,3})-([0-9]{3,4})-([0-9]{4})/g,
+            /([0-9]{3})-([0-9]{4})-([0-9]{4})/g,
+            /(\d{2,3})\s*-\s*(\d{3,4})\s*-\s*(\d{4})/g,
+        ];
+
+        let tel = null;
+        for (const pattern of phonePatterns) {
+            const matches = [...content.matchAll(pattern)];
+            if (matches.length > 0) {
+                if (pattern === phonePatterns[0]) {
+                    // 첫 번째 패턴: 키워드 뒤의 번호
+                    tel = matches[0][1].replace(/[^\d-]/g, "").trim();
+                } else {
+                    // 나머지 패턴: 전체 매치
+                    tel = matches[0][0].replace(/[^\d-]/g, "").trim();
+                }
+                break;
+            }
+        }
+
+        // 위치 정보 추출 - JSON 형식 지원
+        let pos = null;
+
+        // JSON coordinates 형식 파싱
+        try {
+            const coordJsonRegex =
+                /"coordinates"\s*:\s*\{\s*"latitude"\s*:\s*([0-9.]+)\s*,\s*"longitude"\s*:\s*([0-9.]+)\s*\}/i;
+            const coordJsonMatch = content.match(coordJsonRegex);
+
+            if (coordJsonMatch) {
+                const lat = parseFloat(coordJsonMatch[1]);
+                const lon = parseFloat(coordJsonMatch[2]);
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    pos = [lat, lon];
+                }
+            }
+        } catch (e) {}
+
+        // 기존 텍스트 형식도 지원 (fallback)
+        if (!pos) {
+            const coordRegex = /위도[:\s]*([0-9.]+)[,\s]*경도[:\s]*([0-9.]+)/i;
+            const coordMatch = content.match(coordRegex);
+            if (coordMatch) {
+                const lat = parseFloat(coordMatch[1]);
+                const lon = parseFloat(coordMatch[2]);
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    pos = [lat, lon];
+                }
+            }
+        }
+
+        // 전화번호나 위치 정보가 있으면 이벤트 발행
+        if (tel || pos) {
+            const officeInfo = {
+                sessionId,
+                tel: tel || "정보없음",
+                pos: pos || [0, 0],
+            };
+
+            this._emit("office_info", officeInfo);
+        } else {
+        }
     }
 
     _emit(event, payload) {
@@ -580,12 +717,24 @@ class LLMService extends EventEmitter {
 
     _buildSystemPrompt(ragContext, sessionContext, audioContext) {
         const rag = this._truncate(ragContext || "");
-        let p = `당신은 도움이 되는 AI 어시스턴트입니다. 제공된 컨텍스트를 활용해 정확하고 간결하게 답변하세요.\n\n관련 문서:\n${
-            rag || "(없음)"
-        }`;
+        let p = `당신은 행정복지 전문 AI 어시스턴트입니다. 사용자의 질문에 정확하고 도움이 되는 답변을 제공하세요.
+
+**도구 사용 지침:**
+- 동사무소, 주민센터, 구청, 행정기관 관련 질문 → district_office_search 사용
+- 일반 행정서비스, 복지, 정책, FAQ 관련 질문 → faq_search 사용
+- 위치나 전화번호를 묻는다면 반드시 관련 검색 도구를 사용하세요
+
+관련 문서:\n${rag || "(없음)"}`;
+
         if (sessionContext) p += `\n\n세션 컨텍스트:\n${sessionContext}`;
         if (audioContext) p += `\n\n오디오 컨텍스트:\n${audioContext}`;
-        p += `\n\n유의사항:\n1) 문서 기반으로 답하되 부족하면 상식으로 보완 2) 출처를 간단히 표기 3) 불확실하면 추정 금지`;
+
+        p += `\n\n답변 원칙:
+1) 관련 질문에는 먼저 적절한 검색 도구를 사용해서 정확한 정보를 찾으세요
+2) 검색 결과를 바탕으로 정확하고 친근한 답변을 제공하세요
+3) 검색 도구 사용 후에는 반드시 사용자에게 도움이 되는 답변을 추가로 제공하세요
+4) 출처를 명시하고 불확실한 경우 추정하지 마세요`;
+
         return p;
     }
 
