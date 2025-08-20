@@ -19,13 +19,13 @@ class RAGService {
 
     async semanticSearch(
         query,
-        { topK = 3, maxChars = 400, vectorStoreId = null } = {}
+        { topK = 3, maxChars = 400, vectorStoreId = VECTOR_STORE_IDS.DISTRICT_OFFICE } = {}
     ) {
         const targetVectorStoreId = vectorStoreId;
 
-        if (typeof targetVectorStoreId !== "string") {
+        if (typeof targetVectorStoreId !== "string" || targetVectorStoreId.length === 0) {
             throw new Error(
-                `VECTOR_STORE_ID must be string. got: ${typeof targetVectorStoreId}`
+                `vectorStoreId must be a non-empty string. got: ${String(targetVectorStoreId)}`
             );
         }
 
@@ -112,12 +112,13 @@ class RAGService {
         // 사용자 위치가 있으면 쿼리에 위치 정보 추가
         let searchQuery = query;
         if (userCoord && Array.isArray(userCoord) && userCoord.length >= 2) {
-            const [lat, lon] = userCoord;
-            // 유효한 좌표인 경우 위치 정보 추가
-            if (lat !== 0 || lon !== 0) {
+            const [latRaw, lonRaw] = userCoord;
+            const lat = Number(latRaw);
+            const lon = Number(lonRaw);
+            const isFiniteCoord = Number.isFinite(lat) && Number.isFinite(lon);
+            if (isFiniteCoord && (lat !== 0 || lon !== 0)) {
                 searchQuery = `${query} 위치: 위도 ${lat}, 경도 ${lon} 근처`;
             } else {
-                // [0,0] 좌표인 경우 노원구를 기본으로 설정
                 searchQuery = `${query} 노원구`;
             }
         } else {

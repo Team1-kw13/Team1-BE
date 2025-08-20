@@ -132,7 +132,12 @@ class Socket {
                 if (channel === "sonju:currentCoord") {
                     const s = this.sessions.get(sessionId);
                     if (s) {
-                        s.coord = [msg.lat ?? 0.0, msg.lon ?? 0.0];
+                        const lat = Number(msg.lat);
+                        const lon = Number(msg.lon);
+                        s.coord = [
+                            Number.isFinite(lat) ? lat : 0.0,
+                            Number.isFinite(lon) ? lon : 0.0,
+                        ];
                     }
                     return;
                 }
