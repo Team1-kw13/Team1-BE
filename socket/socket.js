@@ -35,9 +35,9 @@ function sanitizeError(err) {
 
 class Socket {
     constructor() {
-      this.wss = null;
-      this._hb = null;
-      this.sessions = new Map(); // sessionId -> { turn: [itemId | "text"], userTranscript: String, coord: [ float ]}
+        this.wss = null;
+        this._hb = null;
+        this.sessions = new Map(); // sessionId -> { turn: [itemId | "text"], userTranscript: String, coord: [ float ]}
     }
 
     init(server) {
@@ -73,7 +73,7 @@ class Socket {
             this.sessions.set(sessionId, {
                 turn: [],
                 userTranscript: "", // 사용자 음성 전사 누적
-                coord: [0.0, 0.0]
+                coord: [0.0, 0.0],
             });
 
             try {
@@ -131,7 +131,9 @@ class Socket {
                 }
                 if (channel === "sonju:currentCoord") {
                     const s = this.sessions.get(sessionId);
-                    if (s) s.coord = [msg.lat ?? 0.0, msg.lon ?? 0.0];
+                    if (s) {
+                        s.coord = [msg.lat ?? 0.0, msg.lon ?? 0.0];
+                    }
                     return;
                 }
 
@@ -203,6 +205,7 @@ class Socket {
             this._addTurn(sessionId);
             try {
                 const text = String(msg.text ?? "");
+                this._setUserContext(sessionId, text); // 처음에 이게 없으면 제안을 안 함
                 llmService.sendTextMessage(sessionId, text, {
                     modalities: ["text", "audio"],
                 });
@@ -426,15 +429,35 @@ class Socket {
             this._sendError(ws, c, r);
         };
 
+        // office_info 이벤트 핸들러
+        const onOfficeInfo = ({ sessionId: sid, tel, pos }) => {
+            if (sid !== sessionId) return;
+
+            if (ws.readyState === ws.OPEN) {
+                const message = {
+                    channel: "sonju:officeInfo",
+                    type: "officeInfo",
+                    tel,
+                    pos,
+                    timestamp: Date.now(),
+                };
+
+                ws.send(JSON.stringify(message));
+            }
+        };
+
         llmService.on("input_audio_buffer_committed", onCommitted);
         llmService.on("error", onErr);
         llmService.on("closed", onClosed);
+        llmService.on("office_info", onOfficeInfo);
+
         ws._llmHandlers.push({
             event: "input_audio_buffer_committed",
             handler: onCommitted,
         });
         ws._llmHandlers.push({ event: "error", handler: onErr });
         ws._llmHandlers.push({ event: "closed", handler: onClosed });
+        ws._llmHandlers.push({ event: "office_info", handler: onOfficeInfo });
     }
 
     _setUserContext(sessionId, userInput) {
