@@ -15,6 +15,7 @@ class LLMService extends EventEmitter {
         super();
         this.clients = new Map(); // sessionId -> WebSocket
         this.meta = new Map(); // sessionId -> { paused, createdAt, lastPing, lastInstrHash }
+        this.conversations = new Map(); // sessionId -> [{ role, content, timestamp }]
         this.socketHandler = null;
         this.ragCache = new Map(); // sessionId -> { query, ragContext, sources, ts }
 
@@ -189,8 +190,19 @@ class LLMService extends EventEmitter {
     }
 
     // 텍스트 송신
-    sendTextMessage(sessionId, text, { modalities = ["text"] } = {}) {
+    sendTextMessage(sessionId, text, { modalities = ["text", "audio"] } = {}) {
         const ws = this._needWs(sessionId);
+
+        // 대화 내역에 사용자 메시지 추가
+        if (!this.conversations.has(sessionId)) {
+            this.conversations.set(sessionId, []);
+        }
+        this.conversations.get(sessionId).push({
+            role: "user",
+            content: text,
+            timestamp: Date.now(),
+        });
+
         this._send(ws, {
             type: "conversation.item.create",
             item: {
@@ -202,70 +214,62 @@ class LLMService extends EventEmitter {
         this._send(ws, { type: "response.create", response: { modalities } });
     }
 
-    sendTextMessageWithResponse(sessionId, text, options = {}) {
-        const ws = this._needWs(sessionId);
-        const { silent = false } = options;
-        return new Promise((resolve, reject) => {
-            let acc = "";
+    getSessionConversation(sessionId) {
+        // 추적된 대화 내역 반환
+        const conversation = this.conversations.get(sessionId) || [];
+        return conversation;
+    }
 
-            const onDelta = (e) => {
-                const data = safeParse(e);
-                if (
-                    data?.type === "response.text.delta" &&
-                    typeof data.delta === "string"
-                )
-                    acc += data.delta;
-            };
-            const onDone = (e) => {
-                const data = safeParse(e);
-                if (
-                    data?.type === "response.text.done" ||
-                    data?.type === "response.done"
-                ) {
-                    ws.off?.("message", onDelta);
-                    ws.off?.("message", onDone);
-                    ws.off?.("message", onErrorEvt);
+    // OpenAI Chat Completions API로 요약 생성
+    async generateSummaryWithChatAPI(sessionId, summaryPrompt) {
+        const conversation = this.getSessionConversation(sessionId);
 
-                    // silent 모드 해제
-                    if (silent) {
-                        const meta = this.meta.get(sessionId) || {};
-                        delete meta.silent;
-                        this.meta.set(sessionId, meta);
-                    }
+        if (conversation.length === 0) {
+            throw new Error("대화 내역이 없습니다.");
+        }
 
-                    resolve({ text: acc, raw: data });
+        // 대화 내역을 텍스트로 변환
+        const conversationText = conversation
+            .map(
+                (msg) =>
+                    `${msg.role === "user" ? "고객" : "상담원"}: ${msg.content}`
+            )
+            .join("\n\n");
+
+        const messages = [
+            {
+                role: "user",
+                content: `다음 고객 상담 대화를 요약해주세요:\n\n${conversationText}\n\n${summaryPrompt}`,
+            },
+        ];
+
+        try {
+            const response = await fetch(
+                "https://api.openai.com/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-3.5-turbo",
+                        messages: messages,
+                        temperature: 0.7,
+                        max_tokens: 1500,
+                    }),
                 }
-            };
-            const onErrorEvt = (e) => {
-                const data = safeParse(e);
-                if (data?.type === "error" || data?.type === "response.error") {
-                    ws.off?.("message", onDelta);
-                    ws.off?.("message", onDone);
-                    ws.off?.("message", onErrorEvt);
+            );
 
-                    // silent 모드 해제
-                    if (silent) {
-                        const meta = this.meta.get(sessionId) || {};
-                        delete meta.silent;
-                        this.meta.set(sessionId, meta);
-                    }
-
-                    reject(new Error(data?.message || "realtime error"));
-                }
-            };
-
-            ws.on("message", onDelta);
-            ws.on("message", onDone);
-            ws.on("message", onErrorEvt);
-
-            // silent 모드 설정
-            if (silent) {
-                const meta = this.meta.get(sessionId) || {};
-                this.meta.set(sessionId, { ...meta, silent: true });
+            if (!response.ok) {
+                throw new Error(`OpenAI API 오류: ${response.status}`);
             }
 
-            this.sendTextMessage(sessionId, text, { modalities: ["text"] });
-        });
+            const data = await response.json();
+            return data.choices[0].message.content;
+        } catch (error) {
+            throw new Error(`요약 생성 실패: ${error.message}`);
+        }
     }
 
     // 오디오 입력 버퍼
@@ -276,7 +280,10 @@ class LLMService extends EventEmitter {
             audio: base64Pcm16Chunk,
         });
     }
-    commitAudioAndCreateResponse(sessionId, { modalities = ["text"] } = {}) {
+    commitAudioAndCreateResponse(
+        sessionId,
+        { modalities = ["text", "audio"] } = {}
+    ) {
         const ws = this._needWs(sessionId);
         this._send(ws, { type: "input_audio_buffer.commit" });
         this._send(ws, { type: "response.create", response: { modalities } });
@@ -330,49 +337,56 @@ class LLMService extends EventEmitter {
 
                 // 텍스트/오디오 응답 스트림
                 case "response.text.delta":
-                    // silent 모드 체크
-                    const meta = this.meta.get(sessionId);
-                    if (!meta?.silent) {
-                        this._emit("text_delta", {
-                            sessionId,
-                            delta: data.delta,
-                            // output_index: data.output_index,
-                        });
-                    }
+                    // 세션별 텍스트 누적
+                    const meta = this.meta.get(sessionId) || {};
+                    meta.accumulatedText =
+                        (meta.accumulatedText || "") + data.delta;
+                    this.meta.set(sessionId, meta);
+                    // 일반 대화 응답
+                    this._emit("text_delta", {
+                        sessionId,
+                        delta: data.delta,
+                        // output_index: data.output_index,
+                    });
                     break;
 
                 case "response.text.done":
-                    // silent 모드 체크
-                    const metaDone = this.meta.get(sessionId);
-                    if (!metaDone?.silent) {
-                        this._emit("text_done", {
-                            sessionId,
-                            // output_index: data.output_index,
+                    // 누적된 텍스트를 대화 내역에 추가
+                    const metaDone = this.meta.get(sessionId) || {};
+                    if (metaDone.accumulatedText) {
+                        if (!this.conversations.has(sessionId)) {
+                            this.conversations.set(sessionId, []);
+                        }
+                        this.conversations.get(sessionId).push({
+                            role: "assistant",
+                            content: metaDone.accumulatedText,
+                            timestamp: Date.now(),
                         });
                     }
+
+                    // 누적된 텍스트 초기화
+                    delete metaDone.accumulatedText;
+                    this.meta.set(sessionId, metaDone);
+
+                    this._emit("text_done", {
+                        sessionId,
+                        // output_index: data.output_index,
+                    });
                     break;
 
                 case "response.audio.delta":
-                    // silent 모드 체크
-                    const metaAudioDelta = this.meta.get(sessionId);
-                    if (!metaAudioDelta?.silent) {
-                        this._emit("audio_delta", {
-                            sessionId,
-                            delta: data.delta,
-                            // output_index: data.output_index,
-                        });
-                    }
+                    this._emit("audio_delta", {
+                        sessionId,
+                        delta: data.delta,
+                        // output_index: data.output_index,
+                    });
                     break;
 
                 case "response.audio.done":
-                    // silent 모드 체크
-                    const metaAudioDone = this.meta.get(sessionId);
-                    if (!metaAudioDone?.silent) {
-                        this._emit("audio_done", {
-                            sessionId,
-                            // output_index: data.output_index,
-                        });
-                    }
+                    this._emit("audio_done", {
+                        sessionId,
+                        // output_index: data.output_index,
+                    });
                     break;
 
                 case "response.done":
@@ -383,27 +397,19 @@ class LLMService extends EventEmitter {
                     break;
 
                 case "response.audio_transcript.delta":
-                    // silent 모드 체크
-                    const metaAudioTransDelta = this.meta.get(sessionId);
-                    if (!metaAudioTransDelta?.silent) {
-                        this._emit("audio_transcript_delta", {
-                            sessionId,
-                            delta: data.delta,
-                            // output_index: data.output_index,
-                        });
-                    }
+                    this._emit("audio_transcript_delta", {
+                        sessionId,
+                        delta: data.delta,
+                        // output_index: data.output_index,
+                    });
                     break;
 
                 case "response.audio_transcript.done":
-                    // silent 모드 체크
-                    const metaAudioTransDone = this.meta.get(sessionId);
-                    if (!metaAudioTransDone?.silent) {
-                        this._emit("audio_transcript_done", {
-                            sessionId,
-                            transcript: data.transcript,
-                            // output_index: data.output_index,
-                        });
-                    }
+                    this._emit("audio_transcript_done", {
+                        sessionId,
+                        transcript: data.transcript,
+                        // output_index: data.output_index,
+                    });
                     break;
 
                 // 전사 스트림
@@ -670,7 +676,7 @@ class LLMService extends EventEmitter {
         });
         this._send(ws, {
             type: "response.create",
-            response: { modalities: ["text"] },
+            response: { modalities: ["text", "audio"] },
         });
     }
 

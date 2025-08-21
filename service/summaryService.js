@@ -33,8 +33,8 @@ class SummaryService {
         }
     }
 
-    // Realtime API에서 직접 구조화된 요약 요청 (silent 모드 사용)
-    async _getStructuredSummaryFromRealtime(llmService, sessionId) {
+    // Chat Completions API로 구조화된 요약 생성
+    async _getStructuredSummaryFromChat(llmService, sessionId) {
         try {
             const summaryPrompt = `지금까지의 고객 상담 내용을 담당자 인수인계용으로 정확하고 자세하게 구조화해서 요약해주세요.
 
@@ -66,21 +66,20 @@ class SummaryService {
 
 **중요: 각 항목의 제목을 정확히 유지하고, 내용은 구체적이고 실용적으로 작성하세요.**`;
 
-            const response = await llmService.sendTextMessageWithResponse(
+            const summaryText = await llmService.generateSummaryWithChatAPI(
                 sessionId,
-                summaryPrompt,
-                { silent: true }
+                summaryPrompt
             );
-            return response.text;
+            return summaryText;
         } catch (error) {
-            throw new Error(`Realtime 요약 생성 실패: ${error.message}`);
+            throw new Error(`Chat API 요약 생성 실패: ${error.message}`);
         }
     }
 
     async generateSessionReport(llmService, sessionId, options = {}) {
         const { theme = "light", format = "image" } = options; // format: "image" | "html" | "both"
 
-        const summaryText = await this._getStructuredSummaryFromRealtime(
+        const summaryText = await this._getStructuredSummaryFromChat(
             llmService,
             sessionId
         );

@@ -343,10 +343,17 @@ class Socket {
         });
 
         fwd("text_done", () => {
+            return {
+                type: "response.text.done",
+                output_index: this._getTurnCount(sessionId),
+            };
+        });
+
+        fwd("response_done", () => {
             this._generateSuggestionsAfterResponse(ws, sessionId);
 
             return {
-                type: "response.text.done",
+                type: "response.done",
                 output_index: this._getTurnCount(sessionId),
             };
         });
