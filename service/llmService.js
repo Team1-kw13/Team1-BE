@@ -353,18 +353,26 @@ class LLMService extends EventEmitter {
                     break;
 
                 case "response.audio.delta":
-                    this._emit("audio_delta", {
-                        sessionId,
-                        delta: data.delta,
-                        // output_index: data.output_index,
-                    });
+                    // silent 모드 체크
+                    const metaAudioDelta = this.meta.get(sessionId);
+                    if (!metaAudioDelta?.silent) {
+                        this._emit("audio_delta", {
+                            sessionId,
+                            delta: data.delta,
+                            // output_index: data.output_index,
+                        });
+                    }
                     break;
 
                 case "response.audio.done":
-                    this._emit("audio_done", {
-                        sessionId,
-                        // output_index: data.output_index,
-                    });
+                    // silent 모드 체크
+                    const metaAudioDone = this.meta.get(sessionId);
+                    if (!metaAudioDone?.silent) {
+                        this._emit("audio_done", {
+                            sessionId,
+                            // output_index: data.output_index,
+                        });
+                    }
                     break;
 
                 case "response.done":
@@ -375,19 +383,27 @@ class LLMService extends EventEmitter {
                     break;
 
                 case "response.audio_transcript.delta":
-                    this._emit("audio_transcript_delta", {
-                        sessionId,
-                        delta: data.delta,
-                        // output_index: data.output_index,
-                    });
+                    // silent 모드 체크
+                    const metaAudioTransDelta = this.meta.get(sessionId);
+                    if (!metaAudioTransDelta?.silent) {
+                        this._emit("audio_transcript_delta", {
+                            sessionId,
+                            delta: data.delta,
+                            // output_index: data.output_index,
+                        });
+                    }
                     break;
 
                 case "response.audio_transcript.done":
-                    this._emit("audio_transcript_done", {
-                        sessionId,
-                        transcript: data.transcript,
-                        // output_index: data.output_index,
-                    });
+                    // silent 모드 체크
+                    const metaAudioTransDone = this.meta.get(sessionId);
+                    if (!metaAudioTransDone?.silent) {
+                        this._emit("audio_transcript_done", {
+                            sessionId,
+                            transcript: data.transcript,
+                            // output_index: data.output_index,
+                        });
+                    }
                     break;
 
                 // 전사 스트림
