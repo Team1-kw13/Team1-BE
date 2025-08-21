@@ -19,13 +19,22 @@ class RAGService {
 
     async semanticSearch(
         query,
-        { topK = 3, maxChars = 400, vectorStoreId = VECTOR_STORE_IDS.DISTRICT_OFFICE } = {}
+        {
+            topK = 3,
+            maxChars = 400,
+            vectorStoreId = VECTOR_STORE_IDS.DISTRICT_OFFICE,
+        } = {}
     ) {
         const targetVectorStoreId = vectorStoreId;
 
-        if (typeof targetVectorStoreId !== "string" || targetVectorStoreId.length === 0) {
+        if (
+            typeof targetVectorStoreId !== "string" ||
+            targetVectorStoreId.length === 0
+        ) {
             throw new Error(
-                `vectorStoreId must be a non-empty string. got: ${String(targetVectorStoreId)}`
+                `vectorStoreId must be a non-empty string. got: ${String(
+                    targetVectorStoreId
+                )}`
             );
         }
 
