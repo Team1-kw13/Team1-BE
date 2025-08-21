@@ -33,7 +33,7 @@ class SummaryService {
         }
     }
 
-    // Realtime API에서 직접 구조화된 요약 요청 (효율적)
+    // Realtime API에서 직접 구조화된 요약 요청 (silent 모드 사용)
     async _getStructuredSummaryFromRealtime(llmService, sessionId) {
         try {
             const summaryPrompt = `지금까지의 고객 상담 내용을 담당자 인수인계용으로 정확하고 자세하게 구조화해서 요약해주세요.
@@ -68,7 +68,8 @@ class SummaryService {
 
             const response = await llmService.sendTextMessageWithResponse(
                 sessionId,
-                summaryPrompt
+                summaryPrompt,
+                { silent: true }
             );
             return response.text;
         } catch (error) {

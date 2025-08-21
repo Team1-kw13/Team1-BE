@@ -202,8 +202,9 @@ class LLMService extends EventEmitter {
         this._send(ws, { type: "response.create", response: { modalities } });
     }
 
-    sendTextMessageWithResponse(sessionId, text) {
+    sendTextMessageWithResponse(sessionId, text, options = {}) {
         const ws = this._needWs(sessionId);
+        const { silent = false } = options;
         return new Promise((resolve, reject) => {
             let acc = "";
 
@@ -217,10 +218,21 @@ class LLMService extends EventEmitter {
             };
             const onDone = (e) => {
                 const data = safeParse(e);
-                if (data?.type === "response.done") {
+                if (
+                    data?.type === "response.text.done" ||
+                    data?.type === "response.done"
+                ) {
                     ws.off?.("message", onDelta);
                     ws.off?.("message", onDone);
                     ws.off?.("message", onErrorEvt);
+
+                    // silent 모드 해제
+                    if (silent) {
+                        const meta = this.meta.get(sessionId) || {};
+                        delete meta.silent;
+                        this.meta.set(sessionId, meta);
+                    }
+
                     resolve({ text: acc, raw: data });
                 }
             };
@@ -230,6 +242,14 @@ class LLMService extends EventEmitter {
                     ws.off?.("message", onDelta);
                     ws.off?.("message", onDone);
                     ws.off?.("message", onErrorEvt);
+
+                    // silent 모드 해제
+                    if (silent) {
+                        const meta = this.meta.get(sessionId) || {};
+                        delete meta.silent;
+                        this.meta.set(sessionId, meta);
+                    }
+
                     reject(new Error(data?.message || "realtime error"));
                 }
             };
@@ -237,6 +257,12 @@ class LLMService extends EventEmitter {
             ws.on("message", onDelta);
             ws.on("message", onDone);
             ws.on("message", onErrorEvt);
+
+            // silent 모드 설정
+            if (silent) {
+                const meta = this.meta.get(sessionId) || {};
+                this.meta.set(sessionId, { ...meta, silent: true });
+            }
 
             this.sendTextMessage(sessionId, text, { modalities: ["text"] });
         });
@@ -304,18 +330,26 @@ class LLMService extends EventEmitter {
 
                 // 텍스트/오디오 응답 스트림
                 case "response.text.delta":
-                    this._emit("text_delta", {
-                        sessionId,
-                        delta: data.delta,
-                        // output_index: data.output_index,
-                    });
+                    // silent 모드 체크
+                    const meta = this.meta.get(sessionId);
+                    if (!meta?.silent) {
+                        this._emit("text_delta", {
+                            sessionId,
+                            delta: data.delta,
+                            // output_index: data.output_index,
+                        });
+                    }
                     break;
 
                 case "response.text.done":
-                    this._emit("text_done", {
-                        sessionId,
-                        // output_index: data.output_index,
-                    });
+                    // silent 모드 체크
+                    const metaDone = this.meta.get(sessionId);
+                    if (!metaDone?.silent) {
+                        this._emit("text_done", {
+                            sessionId,
+                            // output_index: data.output_index,
+                        });
+                    }
                     break;
 
                 case "response.audio.delta":
@@ -701,7 +735,6 @@ class LLMService extends EventEmitter {
             };
 
             this._emit("office_info", officeInfo);
-        } else {
         }
     }
 
