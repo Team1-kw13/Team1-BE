@@ -366,7 +366,7 @@ class SummaryService {
 </head>
 <body>
     <div class="header">
-        <div class="title">🔍 고객 상담 요약 보고서</div>
+        <div class="title">고객 상담 요약 보고서</div>
         <div class="subtitle">Session ID: ${sessionId}</div>
         <div class="subtitle">생성일: ${new Date(timestamp).toLocaleString(
             "ko-KR"
@@ -377,7 +377,7 @@ class SummaryService {
         parsed.topic
             ? `
     <div class="section">
-        <div class="section-title">📋 상담 주제</div>
+        <div class="section-title">상담 주제</div>
         <div class="section-content">${parsed.topic}</div>
     </div>
     `
@@ -388,7 +388,7 @@ class SummaryService {
         parsed.issues
             ? `
     <div class="section">
-        <div class="section-title">❓ 주요 문의사항</div>
+        <div class="section-title">주요 문의사항</div>
         <div class="section-content">${parsed.issues}</div>
     </div>
     `
@@ -399,7 +399,7 @@ class SummaryService {
         parsed.resolved
             ? `
     <div class="section">
-        <div class="section-title">✅ 해결된 내용</div>
+        <div class="section-title">해결된 내용</div>
         <div class="section-content">${parsed.resolved}</div>
     </div>
     `
@@ -410,7 +410,7 @@ class SummaryService {
         parsed.remaining
             ? `
     <div class="section">
-        <div class="section-title">⚠️ 남은 이슈</div>
+        <div class="section-title">남은 이슈</div>
         <div class="section-content">${parsed.remaining}</div>
     </div>
     `
@@ -422,7 +422,7 @@ class SummaryService {
             parsed.emotion
                 ? `
         <div class="section">
-            <div class="section-title">📊 고객 감정</div>
+            <div class="section-title">고객 감정</div>
             <div class="section-content">${parsed.emotion}</div>
         </div>
         `
@@ -433,7 +433,7 @@ class SummaryService {
             parsed.urgency
                 ? `
         <div class="section">
-            <div class="section-title">⚠️ 긴급도</div>
+            <div class="section-title">긴급도</div>
             <div class="section-content">${parsed.urgency}</div>
         </div>
         `
@@ -445,7 +445,7 @@ class SummaryService {
         parsed.progress
             ? `
     <div class="section">
-        <div class="section-title">📈 상담 진행 상황</div>
+        <div class="section-title">상담 진행 상황</div>
         <div class="section-content progress-detailed">
             ${this._formatProgressContent(parsed.progress)}
         </div>
@@ -458,7 +458,7 @@ class SummaryService {
         parsed.additional
             ? `
     <div class="section">
-        <div class="section-title">💡 추가 정보</div>
+        <div class="section-title">추가 정보</div>
         <div class="section-content">${parsed.additional}</div>
     </div>
     `
@@ -469,7 +469,7 @@ class SummaryService {
         parsed.followUp
             ? `
     <div class="section">
-        <div class="section-title">🎯 후속 조치</div>
+        <div class="section-title">후속 조치</div>
         <div class="section-content">${parsed.followUp}</div>
     </div>
     `
@@ -477,7 +477,7 @@ class SummaryService {
     }
 
     <div class="summary-box">
-        <div class="summary-title">📝 원본 요약</div>
+        <div class="summary-title">원본 요약</div>
         <div style="white-space: pre-wrap;">${summaryResult.summary}</div>
     </div>
 

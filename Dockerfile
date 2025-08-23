@@ -1,7 +1,7 @@
 # 베이스 이미지
 FROM node:18-alpine
 
-# Puppeteer 의존성 설치
+# Puppeteer 의존성 및 한글 폰트 설치
 RUN apk add --no-cache \
     chromium \
     nss \
@@ -10,6 +10,9 @@ RUN apk add --no-cache \
     harfbuzz \
     ca-certificates \
     ttf-freefont \
+    fontconfig \
+    font-noto-cjk \
+    && fc-cache -fv \
     && rm -rf /var/cache/apk/*
 
 # Puppeteer가 설치된 Chromium을 사용하도록 설정
