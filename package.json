@@ -4,9 +4,8 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "start": "node index.js",
-        "dev": "nodemon index.js"
+        "start": "pm2-runtime start ecosystem.simple.config.js",
+        "dev": "pm2 start ecosystem.simple.config.js --watch"
     },
     "repository": {
         "type": "git",
@@ -28,6 +27,7 @@
         "dotenv": "^17.2.1",
         "express": "^5.1.0",
         "openai": "^5.12.2",
+        "pm2": "^5.4.2",
         "puppeteer": "^24.16.2",
         "swagger-jsdoc": "^6.2.8",
         "swagger-ui-express": "^5.0.1",

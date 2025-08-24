@@ -15,19 +15,14 @@ app.use(corsMiddleware);
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {
-  res.send("민원 음성 도우미 서버가 실행 중입니다.");
-});
-
-// 테스트 페이지 라우트
-app.get("/test", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "test-llm.html"));
+    res.send("민원 음성 도우미 서버가 실행 중입니다.");
 });
 
 // WebSocket 서버 초기화
 Socket.init(server);
 
-server.listen(PORT, () => {
-  console.log(`서버가 http://localhost:${PORT} 에서 실행 중입니다.`);
-  console.log(`테스트 페이지: http://localhost:${PORT}/test`);
-  console.log(`WebSocket: ws://localhost:${PORT}/`);
+server.listen(PORT, "0.0.0.0", () => {
+    console.log(`서버가 http://localhost:${PORT} 에서 실행 중입니다.`);
+    console.log(`테스트 페이지: http://localhost:${PORT}/test`);
+    console.log(`WebSocket: ws://localhost:${PORT}/`);
 });
