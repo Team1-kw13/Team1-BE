@@ -228,7 +228,7 @@ class Socket {
                 case "무더위 쉼터":
                     prepromt = `사용자가 무더위 쉼터 위치에 대해 질문했습니다. 
 손주처럼 따뜻하고 친근하게, 노인에게 설명하듯 답하세요. 
-반드시 searchCoolingCentre 도구를 호출하여 정보를 찾으세요. 
+반드시 search_cooling_center 도구를 호출하여 정보를 찾으세요. 
 출력은 음성 대화체로만 하며, 불릿이나 노트 형식은 사용하지 마세요.
 현재 무더위 쉼터 검색은 베타 버전입니다. 주변 동사무소를 찾았다는 설명과 함께, 주변 관공서로 가면 더위를 피할 수 있다는 말을 덧붙이는 것을 잊지 마세요.
                     `;
@@ -250,7 +250,10 @@ class Socket {
 마지막에는 "금방 끝나는 일이니 걱정하지 않으셔도 돼요." 같은 격려 문장을 덧붙이세요.
                     `;
                     break
+                default:
+                    return this._sendError(ws, 400, `Unknown preprompt enum: ${selected}`);
             }
+            this._setUserContext(sessionId, prepromt.trim());
             return llmService.sendTextMessage(sessionId, prepromt);
         }
     }
