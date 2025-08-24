@@ -54,9 +54,9 @@ class LLMService extends EventEmitter {
         this._wireServerEvents(ws, sessionId);
 
         this._send(ws, {
-          type: "session.update",
-          session: {
-            instructions: `당신은 노인에게 민원 처리 방법을 설명하는 '손주'입니다. 
+            type: "session.update",
+            session: {
+                instructions: `당신은 노인에게 민원 처리 방법을 설명하는 '손주'입니다. 
 항상 존댓말을 사용하고, 따뜻하고 다정하게 안내하세요. 
 공무원처럼 딱딱하지 말고, 가족처럼 친근하고 이해하기 쉽게 설명하세요. 
 
@@ -65,7 +65,7 @@ class LLMService extends EventEmitter {
   예: "첫째, 신분증을 챙기세요. 둘째, 주민센터에 방문하세요."
 - 중요한 민원 용어(주민등록등본, 가족관계증명서, 국민연금공단, 정부24 등)는 정확히 표기하고 발음하세요.
 - 불필요한 추임새(‘음’, ‘저기’)나 중복 발화는 제거하세요.
-- 필요할 때만 “할머니/할아버지”라고 다정하게 부르세요.
+- 필요할 때만 "어르신"과 같은 존중 표현을 사용하세요.
 - 답변 마지막에는 안심시키거나 격려하는 말을 덧붙이세요. 
   예: "금방 끝나요, 걱정하지 않으셔도 됩니다."
 
@@ -104,125 +104,124 @@ class LLMService extends EventEmitter {
 - 주민등록등본 발급: 주민센터 방문, 신분증 필요, 수수료 1,000원
 
 올바른 예시 (권장):
-"할머니, 등본은 신분증만 챙기시고 가까운 주민센터에 가시면 바로 발급받으실 수 있어요. 
+"어르신, 등본은 신분증만 챙기시고 가까운 주민센터에 가시면 바로 발급받으실 수 있어요. 
 창구에 '주민등록등본 발급'이라고 말씀만 하시면 됩니다. 금방 끝나니 걱정하지 않으셔도 돼요.
 수수료 1000원 있는거 잊지 마세요."`,
-            voice: "alloy",
-            input_audio_format: "pcm16",
-            output_audio_format: "pcm16",
-            input_audio_transcription: {
-                model: "gpt-4o-mini-transcribe",
-                prompt: `모든 대사는 반드시 한국어로 전사하세요. 
+                voice: "alloy",
+                input_audio_format: "pcm16",
+                output_audio_format: "pcm16",
+                input_audio_transcription: {
+                    model: "gpt-4o-mini-transcribe",
+                    prompt: `모든 대사는 반드시 한국어로 전사하세요. 
 사투리와 억양은 표준어로 변환하세요. 
 어눌하거나 반복된 발음은 문맥에 맞게 정리하고, 불필요한 추임새(예: '음', '저기')는 제거하세요. 
 출력은 반드시 올바른 맞춤법과 띄어쓰기를 지켜주세요. 
 발화자는 노인입니다. 
 민원 관련 용어(예: 주민등록등본, 가족관계증명서, 국민연금공단, 민원24)는 정확히 표기하세요. 
 대화는 문장 단위로 끊어 명확하게 작성하세요.`,
-            },
-            turn_detection: null,
-            temperature: 0.7,
-            max_response_output_tokens: 1024,
-            tool_choice: "auto",
-            tools: [
-              {
-                type: "function",
-                name: "search_cooling_center",
-                description:
-                  "무더위 쉼터의 위치와 정보를 반환합니다.",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    mode: {
-                      type: "string",
-                      enum: ["provisional", "final"],
-                      description: "중간/최종 호출 모드",
-                    },
-                    topK: {
-                      type: "integer",
-                      minimum: 1,
-                      maximum: 5,
-                      default: 2,
-                    },
-                    threshold: {
-                      type: "number",
-                      minimum: 0,
-                      maximum: 1,
-                      default: 0.3,
-                    },
-                  },
                 },
-              },
-              {
-                type: "function",
-                name: "district_office_search",
-                description:
-                  "동사무소, 주민센터, 구청, 행정복지센터와 관련된 모든 질문에 답변합니다. 전화번호, 주소, 위치, 업무시간, 민원업무, 증명서 발급 등 행정기관 정보를 검색할 때 사용하세요. 예: '노원구 동사무소', '주민센터 전화번호', '구청 위치', '민원 처리' 등",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    query: {
-                      type: "string",
-                      description: "동사무소 관련 검색 질의 문장",
+                turn_detection: null,
+                temperature: 0.7,
+                max_response_output_tokens: 1024,
+                tool_choice: "auto",
+                tools: [
+                    {
+                        type: "function",
+                        name: "search_cooling_center",
+                        description: "무더위 쉼터의 위치와 정보를 반환합니다.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                mode: {
+                                    type: "string",
+                                    enum: ["provisional", "final"],
+                                    description: "중간/최종 호출 모드",
+                                },
+                                topK: {
+                                    type: "integer",
+                                    minimum: 1,
+                                    maximum: 5,
+                                    default: 2,
+                                },
+                                threshold: {
+                                    type: "number",
+                                    minimum: 0,
+                                    maximum: 1,
+                                    default: 0.3,
+                                },
+                            },
+                        },
                     },
-                    mode: {
-                      type: "string",
-                      enum: ["provisional", "final"],
-                      description: "중간/최종 호출 모드",
+                    {
+                        type: "function",
+                        name: "district_office_search",
+                        description:
+                            "동사무소, 주민센터, 구청, 행정복지센터와 관련된 모든 질문에 답변합니다. 전화번호, 주소, 위치, 업무시간, 민원업무, 증명서 발급 등 행정기관 정보를 검색할 때 사용하세요. 예: '노원구 동사무소', '주민센터 전화번호', '구청 위치', '민원 처리' 등",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                query: {
+                                    type: "string",
+                                    description: "동사무소 관련 검색 질의 문장",
+                                },
+                                mode: {
+                                    type: "string",
+                                    enum: ["provisional", "final"],
+                                    description: "중간/최종 호출 모드",
+                                },
+                                topK: {
+                                    type: "integer",
+                                    minimum: 1,
+                                    maximum: 5,
+                                    default: 2,
+                                },
+                                threshold: {
+                                    type: "number",
+                                    minimum: 0,
+                                    maximum: 1,
+                                    default: 0.3,
+                                },
+                            },
+                            required: ["query"],
+                        },
                     },
-                    topK: {
-                      type: "integer",
-                      minimum: 1,
-                      maximum: 5,
-                      default: 2,
-                    },
-                    threshold: {
-                      type: "number",
-                      minimum: 0,
-                      maximum: 1,
-                      default: 0.3,
-                    },
-                  },
-                  required: ["query"],
-                },
-              },
-              {
-                type: "function",
-                name: "faq_search",
-                description:
-                  "일반적인 자주 묻는 질문(FAQ)이나 행정서비스, 복지혜택, 정책정보에 대한 답변을 제공합니다. 주민등록, 등본발급, 복지혜택, 세금, 건강보험 등 일반 행정 문의사항을 검색할 때 사용하세요. 예: '등본 발급 방법', '복지 혜택', '건강보험' 등",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    query: {
-                      type: "string",
-                      description: `사용자의 민원 관련 요청을 표현하는 한국어 문장.
+                    {
+                        type: "function",
+                        name: "faq_search",
+                        description:
+                            "일반적인 자주 묻는 질문(FAQ)이나 행정서비스, 복지혜택, 정책정보에 대한 답변을 제공합니다. 주민등록, 등본발급, 복지혜택, 세금, 건강보험 등 일반 행정 문의사항을 검색할 때 사용하세요. 예: '등본 발급 방법', '복지 혜택', '건강보험' 등",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                query: {
+                                    type: "string",
+                                    description: `사용자의 민원 관련 요청을 표현하는 한국어 문장.
 불필요한 추임새나 감탄사는 제거하고, 민원 처리 의도를 간결하게 요약하세요.
 예: '등본 떼줘' -> '주민등록등본 발급 방법', '연금 어떻게 받아?' -> '국민연금 수령 절차', '가족관계 증명서 바로 떼줘' -> '가족관계증명서 인터넷 발급 방법'`,
+                                },
+                                mode: {
+                                    type: "string",
+                                    enum: ["provisional", "final"],
+                                    description: "중간/최종 호출 모드",
+                                },
+                                topK: {
+                                    type: "integer",
+                                    minimum: 1,
+                                    maximum: 5,
+                                    default: 2,
+                                },
+                                threshold: {
+                                    type: "number",
+                                    minimum: 0,
+                                    maximum: 1,
+                                    default: 0.3,
+                                },
+                            },
+                            required: ["query"],
+                        },
                     },
-                    mode: {
-                      type: "string",
-                      enum: ["provisional", "final"],
-                      description: "중간/최종 호출 모드",
-                    },
-                    topK: {
-                      type: "integer",
-                      minimum: 1,
-                      maximum: 5,
-                      default: 2,
-                    },
-                    threshold: {
-                      type: "number",
-                      minimum: 0,
-                      maximum: 1,
-                      default: 0.3,
-                    },
-                  },
-                  required: ["query"],
-                },
-              },
-            ],
-          },
+                ],
+            },
         });
 
         const ping = setInterval(() => {
@@ -642,10 +641,10 @@ class LLMService extends EventEmitter {
         const opt =
             mode === "provisional"
                 ? {
-                    topK: Math.min(topK, 1),
-                    threshold: Math.max(threshold, 0.4),
-                    maxChars: 120,
-                }
+                      topK: Math.min(topK, 1),
+                      threshold: Math.max(threshold, 0.4),
+                      maxChars: 120,
+                  }
                 : { topK, threshold, maxChars: 200 };
 
         const isQueryEmpty = (query) => {
@@ -662,9 +661,9 @@ class LLMService extends EventEmitter {
                 this._send(ws, { type: "response.create" });
                 return true;
             }
-            return false
+            return false;
         };
-        
+
         let results;
         const query = typeof args.query === "string" ? args.query.trim() : "";
         switch (name) {
@@ -702,7 +701,7 @@ class LLMService extends EventEmitter {
                     },
                 });
                 this._send(ws, { type: "response.create" });
-        };
+        }
 
         // 신뢰도 체크 - 결과가 없거나 가장 높은 점수가 threshold보다 낮으면 저신뢰도 메시지 반환
         if (results.length === 0 || (results[0]?.score || 0) < threshold) {
@@ -839,7 +838,7 @@ class LLMService extends EventEmitter {
                 }
             }
         }
-         // 동사무소 이름 추출
+        // 동사무소 이름 추출
         let officeName = null;
         const namePatterns = [
             /([가-힣]+(?:동사무소|주민센터|행정복지센터|구청))/g,
