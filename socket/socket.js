@@ -254,7 +254,7 @@ class Socket {
                     return this._sendError(ws, 400, `Unknown preprompt enum: ${selected}`);
             }
             this._setUserContext(sessionId, prepromt.trim());
-            return llmService.sendTextMessage(sessionId, prepromt);
+            return llmService.sendTextMessage(sessionId, preprompt.trim());
         }
     }
 

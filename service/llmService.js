@@ -649,7 +649,7 @@ class LLMService extends EventEmitter {
                 : { topK, threshold, maxChars: 200 };
 
         const isQueryEmpty = (query) => {
-            query = String(args.query || "").trim();
+            query = String(query || "").trim();
             if (!query) {
                 this._send(ws, {
                     type: "conversation.item.create",
@@ -666,6 +666,7 @@ class LLMService extends EventEmitter {
         };
         
         let results;
+        const query = typeof args.query === "string" ? args.query.trim() : "";
         switch (name) {
             case "district_office_search": {
                 if (isQueryEmpty(query)) return;
@@ -682,7 +683,7 @@ class LLMService extends EventEmitter {
             case "search_cooling_center": {
                 const userCoord =
                     this.socketHandler?.sessions?.get(sessionId)?.coord;
-                results = await ragService.searchDistrictOffice(userCoord, opt);
+                results = await ragService.searchCoolingCenter(userCoord, opt);
                 break;
             }
 
