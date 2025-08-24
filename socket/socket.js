@@ -77,11 +77,7 @@ class Socket {
             });
 
             try {
-                await llmService.createRealtimeSession(
-                    sessionId,
-                    "복지 상담",
-                    "웹 테스트"
-                );
+                await llmService.createRealtimeSession(sessionId);
                 this._setupLLMForwarding(sessionId, ws);
             } catch (e) {
                 return this._sendError(
