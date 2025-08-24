@@ -114,7 +114,7 @@ class RAGService {
             .join("\n\n");
     }
 
-    async searchCoolingCentre(userCoord = null, options = {}) {
+    async searchCoolingCenter(userCoord = null, options = {}) {
         const { topK = 3, threshold = 0, maxChars = 400 } = options;
 
         let searchQuery = "";

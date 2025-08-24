@@ -82,9 +82,9 @@ class LLMService extends EventEmitter {
 - 중요한 절차와 단어는 또렷하게 강조하세요.
 
 도구 호출 지침:
-[searchCoolingCentre]
-- 사용자가 '무더위 쉼터', '더위', '더워서 쉴 곳', '쉼터 위치' 등과 관련된 질문을 하면 반드시 searchCoolingCentre 도구를 호출하세요.
-- searchCoolingCentre의 결과를 받을 경우, 노인에게 손주처럼 따뜻하게 설명해주세요.
+[search_cooling_center]
+- 사용자가 '무더위 쉼터', '더위', '더워서 쉴 곳', '쉼터 위치' 등과 관련된 질문을 하면 반드시 search_cooling_center 도구를 호출하세요.
+- search_cooling_center의 결과를 받을 경우, 노인에게 손주처럼 따뜻하게 설명해주세요.
 - 현재 베타 버전이므로 주변 동 사무소를 찾았다는 설명과 함께, 주변 관공서로 가면 더위를 피할 수 있다는 말을 덧붙여주세요.
 
 [district_office_search]
@@ -127,7 +127,7 @@ class LLMService extends EventEmitter {
             tools: [
               {
                 type: "function",
-                name: "search_cooling_centre",
+                name: "search_cooling_center",
                 description:
                   "무더위 쉼터의 위치와 정보를 반환합니다.",
                 parameters: {
@@ -679,7 +679,7 @@ class LLMService extends EventEmitter {
                 break;
             }
 
-            case "search_cooling_centre": {
+            case "search_cooling_center": {
                 const userCoord =
                     this.socketHandler?.sessions?.get(sessionId)?.coord;
                 results = await ragService.searchDistrictOffice(userCoord, opt);
