@@ -88,7 +88,8 @@ class LLMService extends EventEmitter {
 - 현재 베타 버전이므로 주변 동 사무소를 찾았다는 설명과 함께, 주변 관공서로 가면 더위를 피할 수 있다는 말을 덧붙여주세요.
 
 [district_office_search]
-- 사용자가 특정 동 주민센터/사무소의 위치, 전화번호, 관할, 운영 시간 등을 묻는 경우 호출하세요.
+- 사용자가 "동사무소", "주민센터", "구청" 등의 단어를 언급하거나, 민원 업무(등본 발급, 증명서 발급 등)를 문의할 때 항상 호출하세요.
+- 현재 위치 기반으로 가장 가까운 주민센터 정보를 제공합니다.
 - query 작성 규칙:
   * 사용자의 발화를 핵심만 담아 한국어 문장으로 정리하세요.
   * 기관명/동 이름/구 이름/원하는 정보(전화/위치/시간 등) 포함
@@ -466,6 +467,24 @@ class LLMService extends EventEmitter {
                     break;
 
                 case "response.done":
+                    // 누적된 텍스트를 대화 내역에 추가
+                    const metaResponseDone = this.meta.get(sessionId) || {};
+
+                    if (metaResponseDone.accumulatedText) {
+                        if (!this.conversations.has(sessionId)) {
+                            this.conversations.set(sessionId, []);
+                        }
+                        this.conversations.get(sessionId).push({
+                            role: "assistant",
+                            content: metaResponseDone.accumulatedText,
+                            timestamp: Date.now(),
+                        });
+
+                        // 누적된 텍스트 초기화
+                        delete metaResponseDone.accumulatedText;
+                        this.meta.set(sessionId, metaResponseDone);
+                    }
+
                     this._emit("response_done", {
                         sessionId,
                         response: data.response,
@@ -473,6 +492,12 @@ class LLMService extends EventEmitter {
                     break;
 
                 case "response.audio_transcript.delta":
+                    // 오디오 전사 텍스트 누적 (실제 응답 텍스트)
+                    const metaTranscript = this.meta.get(sessionId) || {};
+                    metaTranscript.accumulatedText =
+                        (metaTranscript.accumulatedText || "") + data.delta;
+                    this.meta.set(sessionId, metaTranscript);
+
                     this._emit("audio_transcript_delta", {
                         sessionId,
                         delta: data.delta,

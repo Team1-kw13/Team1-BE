@@ -302,9 +302,20 @@ class Socket {
     async _generateSuggestionsAfterResponse(ws, sessionId) {
         try {
             const session = this.sessions.get(sessionId);
-            if (!session?.lastUserInput?.trim()) return;
+            // LLM 서비스에서 전체 대화 내역 가져오기
+            const conversation = llmService.getSessionConversation(sessionId);
 
-            const context = session.lastUserInput;
+            if (conversation.length === 0) return;
+
+            const context = conversation
+                .map(
+                    (msg) =>
+                        `${msg.role === "user" ? "사용자" : "AI"}: ${
+                            msg.content
+                        }`
+                )
+                .join("\n");
+            console.log(context);
             const suggestions = await suggestionService.generate(context);
 
             if (ws.readyState === ws.OPEN) {
