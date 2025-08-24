@@ -227,12 +227,36 @@ class Socket {
         if (type === "preprompted") {
             this._addTurn(sessionId);
             const selected = msg.enum || "";
-            return this._sendConv(ws, {
-                type: "preprompted.done",
-                output: `선택된 프리프롬프트: ${selected}`,
-            });
+            let prepromt = "";
+            switch (selected) {
+                case "무더위 쉼터":
+                    prepromt = `사용자가 무더위 쉼터 위치에 대해 질문했습니다. 
+손주처럼 따뜻하고 친근하게, 노인에게 설명하듯 답하세요. 
+반드시 searchCoolingCentre 도구를 호출하여 정보를 찾으세요. 
+출력은 음성 대화체로만 하며, 불릿이나 노트 형식은 사용하지 마세요.
+현재 무더위 쉼터 검색은 베타 버전입니다. 주변 동사무소를 찾았다는 설명과 함께, 주변 관공서로 가면 더위를 피할 수 있다는 말을 덧붙이는 것을 잊지 마세요.
+                    `;
+                    break
+                case "동사무소":
+                    prepromt = `사용자가 주변 주민센터(동사무소)의 위치에 대해 질문했습니다. 
+손주처럼 따뜻하고 친근하게, 노인에게 설명하듯 답하세요. 
+반드시 district_office_search 도구를 호출하여 해당 동 주민센터의 정보를 찾으세요. 
+출력은 음성 대화체로만 하며, 불릿이나 노트 형식은 사용하지 마세요.
+명심하세요. 사용자는 동사무소가 어떤 곳인지가 궁금한 것이 아니라, 위치 등의 정보가 궁금한 것입니다. 반드시 district_office_search 도구를 사용하세요.
+설명 끝에는 "필요하시면 제가 바로 전화 연결해드릴 수도 있어요." 같은 안심 멘트를 덧붙이세요.
+                    `;
+                    break
+                case "등본 발급":
+                    prepromt = `사용자가 주민등록등본 발급에 대해 질문했습니다. 
+손주처럼 따뜻하고 친근하게, 노인에게 설명하듯 답하세요. 
+반드시 faq_search 도구를 호출하여 등본 발급 방법, 준비물, 무인발급기 이용 가능 여부, 수수료 등을 찾으세요. 
+출력은 1~3단계 절차로 간단히 요약하고, 불릿이나 노트 형식은 사용하지 마세요. 
+마지막에는 "금방 끝나는 일이니 걱정하지 않으셔도 돼요." 같은 격려 문장을 덧붙이세요.
+                    `;
+                    break
+            }
+            return llmService.sendTextMessage(sessionId, prepromt);
         }
-        // 그 외 이벤트는 무시
     }
 
     // ====== summarize ======
