@@ -2,8 +2,8 @@ const openai = require("../config/openai");
 
 // Vector Store ID 분리
 const VECTOR_STORE_IDS = {
-    DISTRICT_OFFICE: "vs_68a5608c437c8191b1f78636fd492237", // 동사무소
-    FAQ: "vs_68a5608cb5f48191a8e896f1845bef8a", // FAQ용
+    DISTRICT_OFFICE: process.env.VECTOR_STORE_DISTRICT_OFFICE, // 동사무소
+    FAQ: process.env.VECTOR_STORE_FAQ, // FAQ용
 };
 
 class RAGService {
@@ -129,7 +129,7 @@ class RAGService {
                 searchQuery = `노원구`;
             }
         } else {
-             searchQuery = `노원구`;
+            searchQuery = `노원구`;
         }
 
         // RAG 문서 준비되기 전까지는 주변 동사무소로 안내.
@@ -143,7 +143,7 @@ class RAGService {
             .filter(
                 (r) => (typeof r.score === "number" ? r.score : 0) >= threshold
             )
-            .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+            .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
     }
 
     // 동사무소 전용 검색
