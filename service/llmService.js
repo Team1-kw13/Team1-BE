@@ -14,7 +14,7 @@ class LLMService extends EventEmitter {
     constructor() {
         super();
         this.clients = new Map(); // sessionId -> WebSocket
-        this.meta = new Map(); // sessionId -> { paused, createdAt, lastPing, lastInstrHash }
+        this.meta = new Map(); // sessionId -> { createdAt, lastPing }
         this.conversations = new Map(); // sessionId -> [{ role, content, timestamp }]
         this.socketHandler = null;
         this.ragCache = new Map(); // sessionId -> { query, ragContext, sources, ts }
@@ -34,11 +34,7 @@ class LLMService extends EventEmitter {
     }
 
     // 세션 생성: 전사 꺼둠, 출력 토큰 제한 축소, 기본 모달리티 텍스트 위주, tools 등록
-    async createRealtimeSession(
-        sessionId,
-        sessionContext = "",
-        audioContext = ""
-    ) {
+    async createRealtimeSession(sessionId) {
         if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY 누락");
 
         const ws = new WebSocket(REALTIME_URL, { headers: OPENAI_HEADERS });
@@ -57,25 +53,105 @@ class LLMService extends EventEmitter {
 
         this._wireServerEvents(ws, sessionId);
 
-        const baseInstructions = this._buildSystemPrompt(
-            "",
-            sessionContext,
-            audioContext
-        );
-
         this._send(ws, {
             type: "session.update",
             session: {
-                instructions: baseInstructions,
+                instructions: `당신은 노인에게 민원 처리 방법을 설명하는 '손주'입니다. 
+항상 존댓말을 사용하고, 따뜻하고 다정하게 안내하세요. 
+공무원처럼 딱딱하지 말고, 가족처럼 친근하고 이해하기 쉽게 설명하세요. 
+
+대화 스타일:
+- 설명은 단계별로 짧고 쉽게 끊어 말하세요. 
+  예: "첫째, 신분증을 챙기세요. 둘째, 주민센터에 방문하세요."
+- 중요한 민원 용어(주민등록등본, 가족관계증명서, 국민연금공단, 정부24 등)는 정확히 표기하고 발음하세요.
+- 불필요한 추임새(‘음’, ‘저기’)나 중복 발화는 제거하세요.
+- 필요할 때만 "어르신"과 같은 존중 표현을 사용하세요.
+- 답변 마지막에는 안심시키거나 격려하는 말을 덧붙이세요. 
+  예: "금방 끝나요, 걱정하지 않으셔도 됩니다."
+
+출력 형식:
+- 반드시 음성 대화체 문장으로만 답변하세요. 
+- 불릿 포인트, 노트, 요약 정리 형식은 절대 사용하지 마세요.
+- 민원 처리 절차는 항상 1~3개의 핵심 절차를 단계별로 요약한 뒤, 필요하다면 짧은 추가 설명을 붙이세요.
+- 불확실하거나 제도 변경 가능성이 있는 답변은 추정하지 말고, "담당 주민센터에 직접 확인"을 권고하세요.
+- 3회 이상 음성/의미 인식인식 실패 시, 담당자 연결을 안내하세요.
+
+음성 지침:
+- 목소리는 밝고 친근하게, 손주가 설명하는 듯한 따뜻한 톤으로 말하세요.
+- 말하는 속도는 일반 대화보다 약간 느리게, 또박또박 전달하세요.
+- 중요한 절차와 단어는 또렷하게 강조하세요.
+
+도구 호출 지침:
+[search_cooling_center]
+- 사용자가 '무더위 쉼터', '더위', '더워서 쉴 곳', '쉼터 위치' 등과 관련된 질문을 하면 반드시 search_cooling_center 도구를 호출하세요.
+- search_cooling_center의 결과를 받을 경우, 노인에게 손주처럼 따뜻하게 설명해주세요.
+- 현재 베타 버전이므로 주변 동 사무소를 찾았다는 설명과 함께, 주변 관공서로 가면 더위를 피할 수 있다는 말을 덧붙여주세요.
+
+[district_office_search]
+- 사용자가 특정 동 주민센터/사무소의 위치, 전화번호, 관할, 운영 시간 등을 묻는 경우 호출하세요.
+- query 작성 규칙:
+  * 사용자의 발화를 핵심만 담아 한국어 문장으로 정리하세요.
+  * 기관명/동 이름/구 이름/원하는 정보(전화/위치/시간 등) 포함
+  * 예시: “중계동 주민센터 전화번호”, “노원구청 위치”, “상계동 주민센터 업무시간”
+
+[faq_search]
+- 사용자가 민원 절차, 준비물, 신청 방법, 자주 묻는 민원 관련 안내를 요청할 때 호출하세요.
+- query 작성 규칙:
+  * 사용자의 발화를 핵심만 담아 한국어 문장으로 정리하세요.
+
+출력 예시:
+잘못된 예시 (금지): 
+- 주민등록등본 발급: 주민센터 방문, 신분증 필요, 수수료 1,000원
+
+올바른 예시 (권장):
+"어르신, 등본은 신분증만 챙기시고 가까운 주민센터에 가시면 바로 발급받으실 수 있어요. 
+창구에 '주민등록등본 발급'이라고 말씀만 하시면 됩니다. 금방 끝나니 걱정하지 않으셔도 돼요.
+수수료 1000원 있는거 잊지 마세요."`,
                 voice: "alloy",
                 input_audio_format: "pcm16",
                 output_audio_format: "pcm16",
-                input_audio_transcription: { model: "whisper-1" },
+                input_audio_transcription: {
+                    model: "gpt-4o-mini-transcribe",
+                    prompt: `모든 대사는 반드시 한국어로 전사하세요. 
+사투리와 억양은 표준어로 변환하세요. 
+어눌하거나 반복된 발음은 문맥에 맞게 정리하고, 불필요한 추임새(예: '음', '저기')는 제거하세요. 
+출력은 반드시 올바른 맞춤법과 띄어쓰기를 지켜주세요. 
+발화자는 노인입니다. 
+민원 관련 용어(예: 주민등록등본, 가족관계증명서, 국민연금공단, 민원24)는 정확히 표기하세요. 
+대화는 문장 단위로 끊어 명확하게 작성하세요.`,
+                },
                 turn_detection: null,
                 temperature: 0.7,
-                max_response_output_tokens: 350,
+                max_response_output_tokens: 1024,
                 tool_choice: "auto",
                 tools: [
+                    {
+                        type: "function",
+                        name: "search_cooling_center",
+                        description: "무더위 쉼터의 위치와 정보를 반환합니다.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                mode: {
+                                    type: "string",
+                                    enum: ["provisional", "final"],
+                                    description: "중간/최종 호출 모드",
+                                },
+                                topK: {
+                                    type: "integer",
+                                    minimum: 1,
+                                    maximum: 5,
+                                    default: 2,
+                                },
+                                threshold: {
+                                    type: "number",
+                                    minimum: 0,
+                                    maximum: 1,
+                                    default: 0.3,
+                                },
+                            },
+                        },
+                    },
                     {
                         type: "function",
                         name: "district_office_search",
@@ -119,7 +195,9 @@ class LLMService extends EventEmitter {
                             properties: {
                                 query: {
                                     type: "string",
-                                    description: "FAQ 관련 검색 질의 문장",
+                                    description: `사용자의 민원 관련 요청을 표현하는 한국어 문장.
+불필요한 추임새나 감탄사는 제거하고, 민원 처리 의도를 간결하게 요약하세요.
+예: '등본 떼줘' -> '주민등록등본 발급 방법', '연금 어떻게 받아?' -> '국민연금 수령 절차', '가족관계 증명서 바로 떼줘' -> '가족관계증명서 인터넷 발급 방법'`,
                                 },
                                 mode: {
                                     type: "string",
@@ -158,8 +236,6 @@ class LLMService extends EventEmitter {
         this.clients.set(sessionId, ws);
         this.meta.set(sessionId, {
             createdAt: Date.now(),
-            paused: false,
-            lastInstrHash: this._hash(baseInstructions),
         });
         this.fcalls.set(sessionId, new Map());
         return ws;
@@ -557,33 +633,6 @@ class LLMService extends EventEmitter {
         }
         this.lastToolAt.set(sessionId, Date.now());
 
-        if (name !== "district_office_search" && name !== "faq_search") {
-            this._send(ws, {
-                type: "conversation.item.create",
-                item: {
-                    type: "function_call_output",
-                    call_id: callId,
-                    output: JSON.stringify({ error: "unknown tool" }),
-                },
-            });
-            this._send(ws, { type: "response.create" });
-            return;
-        }
-
-        const query = String(args.query || "").trim();
-        if (!query) {
-            this._send(ws, {
-                type: "conversation.item.create",
-                item: {
-                    type: "function_call_output",
-                    call_id: callId,
-                    output: JSON.stringify({ error: "empty query" }),
-                },
-            });
-            this._send(ws, { type: "response.create" });
-            return;
-        }
-
         const mode = args.mode === "provisional" ? "provisional" : "final";
         const topK = Number.isInteger(args.topK) ? args.topK : 2;
         const threshold =
@@ -598,18 +647,60 @@ class LLMService extends EventEmitter {
                   }
                 : { topK, threshold, maxChars: 200 };
 
+        const isQueryEmpty = (query) => {
+            query = String(query || "").trim();
+            if (!query) {
+                this._send(ws, {
+                    type: "conversation.item.create",
+                    item: {
+                        type: "function_call_output",
+                        call_id: callId,
+                        output: JSON.stringify({ error: "empty query" }),
+                    },
+                });
+                this._send(ws, { type: "response.create" });
+                return true;
+            }
+            return false;
+        };
+
         let results;
-        if (name === "district_office_search") {
-            // 사용자 위치 정보 가져오기
-            const userCoord =
-                this.socketHandler?.sessions?.get(sessionId)?.coord;
-            results = await ragService.searchDistrictOffice(
-                query,
-                userCoord,
-                opt
-            );
-        } else if (name === "faq_search") {
-            results = await ragService.searchFAQ(query, opt);
+        const query = typeof args.query === "string" ? args.query.trim() : "";
+        switch (name) {
+            case "district_office_search": {
+                if (isQueryEmpty(query)) return;
+                const userCoord =
+                    this.socketHandler?.sessions?.get(sessionId)?.coord;
+                results = await ragService.searchDistrictOffice(
+                    query,
+                    userCoord,
+                    opt
+                );
+                break;
+            }
+
+            case "search_cooling_center": {
+                const userCoord =
+                    this.socketHandler?.sessions?.get(sessionId)?.coord;
+                results = await ragService.searchCoolingCenter(userCoord, opt);
+                break;
+            }
+
+            case "faq_search":
+                if (isQueryEmpty(query)) return;
+                results = await ragService.searchFAQ(query, opt);
+                break;
+
+            default:
+                this._send(ws, {
+                    type: "conversation.item.create",
+                    item: {
+                        type: "function_call_output",
+                        call_id: callId,
+                        output: JSON.stringify({ error: "unknown tool" }),
+                    },
+                });
+                this._send(ws, { type: "response.create" });
         }
 
         // 신뢰도 체크 - 결과가 없거나 가장 높은 점수가 threshold보다 낮으면 저신뢰도 메시지 반환
@@ -747,11 +838,32 @@ class LLMService extends EventEmitter {
                 }
             }
         }
+        // 동사무소 이름 추출
+        let officeName = null;
+        const namePatterns = [
+            /([가-힣]+(?:동사무소|주민센터|행정복지센터|구청))/g,
+            /(?:기관명|센터명|명칭)[:\s]*([가-힣\s]+(?:동사무소|주민센터|행정복지센터|구청))/g,
+        ];
+
+        for (const pattern of namePatterns) {
+            const matches = [...content.matchAll(pattern)];
+            if (matches.length > 0) {
+                if (pattern === namePatterns[1]) {
+                    // 키워드 뒤의 이름
+                    officeName = matches[0][1].trim();
+                } else {
+                    // 직접 매치된 이름
+                    officeName = matches[0][1].trim();
+                }
+                break;
+            }
+        }
 
         // 전화번호나 위치 정보가 있으면 이벤트 발행
-        if (tel || pos) {
+        if (tel || pos || officeName) {
             const officeInfo = {
                 sessionId,
+                name: officeName || "정보없음",
                 tel: tel || "정보없음",
                 pos: pos || [0, 0],
             };
@@ -768,29 +880,6 @@ class LLMService extends EventEmitter {
     _truncate(s, max = this.maxRagChars) {
         if (!s) return s;
         return s.length > max ? s.slice(0, max) + "...(truncated)" : s;
-    }
-
-    _buildSystemPrompt(ragContext, sessionContext, audioContext) {
-        const rag = this._truncate(ragContext || "");
-        let p = `당신은 행정복지 전문 AI 어시스턴트입니다. 사용자의 질문에 정확하고 도움이 되는 답변을 제공하세요.
-
-**도구 사용 지침:**
-- 동사무소, 주민센터, 구청, 행정기관 관련 질문 → district_office_search 사용
-- 일반 행정서비스, 복지, 정책, FAQ 관련 질문 → faq_search 사용
-- 위치나 전화번호를 묻는다면 반드시 관련 검색 도구를 사용하세요
-
-관련 문서:\n${rag || "(없음)"}`;
-
-        if (sessionContext) p += `\n\n세션 컨텍스트:\n${sessionContext}`;
-        if (audioContext) p += `\n\n오디오 컨텍스트:\n${audioContext}`;
-
-        p += `\n\n답변 원칙:
-1) 관련 질문에는 먼저 적절한 검색 도구를 사용해서 정확한 정보를 찾으세요
-2) 검색 결과를 바탕으로 정확하고 친근한 답변을 제공하세요
-3) 검색 도구 사용 후에는 반드시 사용자에게 도움이 되는 답변을 추가로 제공하세요
-4) 출처를 명시하고 불확실한 경우 추정하지 마세요`;
-
-        return p;
     }
 
     _normalize(q) {
