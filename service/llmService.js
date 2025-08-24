@@ -78,7 +78,7 @@ class LLMService extends EventEmitter {
                 tools: [
                     {
                         type: "function",
-                        name: "searchCoolingCentre",
+                        name: "search_cooling_centre",
                         description: "무더위 쉼터의 위치와 정보를 검색할 때 사용하세요.",
                         parameters: {
                             type: "object",
@@ -627,30 +627,27 @@ class LLMService extends EventEmitter {
                     opt
                 );
                 break;
-            };
+            }
 
-            case "searchCoolingCentre": {
+            case "search_cooling_centre": {
                 const userCoord =
                     this.socketHandler?.sessions?.get(sessionId)?.coord;
-                results = await ragService.searchDistrictOffice(
-                    userCoord,
-                    opt
-                );
+                results = await ragService.searchDistrictOffice(userCoord, opt);
                 break;
-            };
+            }
 
             case "faq_search":
                 if (isQueryEmpty(query)) return;
                 results = await ragService.searchFAQ(query, opt);
                 break;
-            
+
             default:
                 this._send(ws, {
                     type: "conversation.item.create",
                     item: {
-                    type: "function_call_output",
-                    call_id: callId,
-                    output: JSON.stringify({ error: "unknown tool" }),
+                        type: "function_call_output",
+                        call_id: callId,
+                        output: JSON.stringify({ error: "unknown tool" }),
                     },
                 });
                 this._send(ws, { type: "response.create" });
