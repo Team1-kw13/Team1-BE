@@ -369,7 +369,8 @@ class SummaryService {
         <div class="title">고객 상담 요약 보고서</div>
         <div class="subtitle">Session ID: ${sessionId}</div>
         <div class="subtitle">생성일: ${new Date(timestamp).toLocaleString(
-            "ko-KR"
+            "ko-KR",
+            { timeZone: "Asia/Seoul" }
         )}</div>
     </div>
 
