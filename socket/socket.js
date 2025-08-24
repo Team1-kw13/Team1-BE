@@ -465,13 +465,14 @@ class Socket {
         };
 
         // office_info 이벤트 핸들러
-        const onOfficeInfo = ({ sessionId: sid, tel, pos }) => {
+        const onOfficeInfo = ({ sessionId: sid, name, tel, pos }) => {
             if (sid !== sessionId) return;
 
             if (ws.readyState === ws.OPEN) {
                 const message = {
                     channel: "sonju:officeInfo",
                     type: "officeInfo",
+                    name,
                     tel,
                     pos,
                     timestamp: Date.now(),
