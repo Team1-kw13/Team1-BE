@@ -114,6 +114,38 @@ class RAGService {
             .join("\n\n");
     }
 
+    async searchCoolingCentre(userCoord = null, options = {}) {
+        const { topK = 3, threshold = 0, maxChars = 400 } = options;
+
+        let searchQuery = "";
+        if (userCoord && Array.isArray(userCoord) && userCoord.length >= 2) {
+            const [latRaw, lonRaw] = userCoord;
+            const lat = Number(latRaw);
+            const lon = Number(lonRaw);
+            const isFiniteCoord = Number.isFinite(lat) && Number.isFinite(lon);
+            if (isFiniteCoord && (lat !== 0 || lon !== 0)) {
+                searchQuery = ` 위치: 위도 ${lat}, 경도 ${lon} 근처`;
+            } else {
+                searchQuery = `노원구`;
+            }
+        } else {
+             searchQuery = `노원구`;
+        }
+
+        // RAG 문서 준비되기 전까지는 주변 동사무소로 안내.
+        const results = await this.semanticSearch(searchQuery, {
+            topK,
+            maxChars,
+            vectorStoreId: VECTOR_STORE_IDS.DISTRICT_OFFICE,
+        });
+
+        return results
+            .filter(
+                (r) => (typeof r.score === "number" ? r.score : 0) >= threshold
+            )
+            .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+    }
+
     // 동사무소 전용 검색
     async searchDistrictOffice(query, userCoord = null, options = {}) {
         const { topK = 3, threshold = 0, maxChars = 400 } = options;
