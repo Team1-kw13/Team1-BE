@@ -78,16 +78,11 @@ class LLMService extends EventEmitter {
                 tools: [
                     {
                         type: "function",
-                        name: "district_office_search",
-                        description:
-                            "동사무소, 주민센터, 구청, 행정복지센터와 관련된 모든 질문에 답변합니다. 전화번호, 주소, 위치, 업무시간, 민원업무, 증명서 발급 등 행정기관 정보를 검색할 때 사용하세요. 예: '노원구 동사무소', '주민센터 전화번호', '구청 위치', '민원 처리' 등",
+                        name: "searchCoolingCentre",
+                        description: "무더위 쉼터의 위치와 정보를 검색할 때 사용하세요.",
                         parameters: {
                             type: "object",
                             properties: {
-                                query: {
-                                    type: "string",
-                                    description: "동사무소 관련 검색 질의 문장",
-                                },
                                 mode: {
                                     type: "string",
                                     enum: ["provisional", "final"],
@@ -106,7 +101,39 @@ class LLMService extends EventEmitter {
                                     default: 0.3,
                                 },
                             },
-                            required: ["query"],
+                        },
+                    },
+                    {
+                        type: "function",
+                        name: "district_office_search",
+                        description:
+                        "동사무소, 주민센터, 구청, 행정복지센터와 관련된 모든 질문에 답변합니다. 전화번호, 주소, 위치, 업무시간, 민원업무, 증명서 발급 등 행정기관 정보를 검색할 때 사용하세요. 예: '노원구 동사무소', '주민센터 전화번호', '구청 위치', '민원 처리' 등",
+                        parameters: {
+                        type: "object",
+                        properties: {
+                            query: {
+                            type: "string",
+                            description: "동사무소 관련 검색 질의 문장",
+                            },
+                            mode: {
+                            type: "string",
+                            enum: ["provisional", "final"],
+                            description: "중간/최종 호출 모드",
+                            },
+                            topK: {
+                            type: "integer",
+                            minimum: 1,
+                            maximum: 5,
+                            default: 2,
+                            },
+                            threshold: {
+                            type: "number",
+                            minimum: 0,
+                            maximum: 1,
+                            default: 0.3,
+                            },
+                        },
+                        required: ["query"],
                         },
                     },
                     {
@@ -557,33 +584,6 @@ class LLMService extends EventEmitter {
         }
         this.lastToolAt.set(sessionId, Date.now());
 
-        if (name !== "district_office_search" && name !== "faq_search") {
-            this._send(ws, {
-                type: "conversation.item.create",
-                item: {
-                    type: "function_call_output",
-                    call_id: callId,
-                    output: JSON.stringify({ error: "unknown tool" }),
-                },
-            });
-            this._send(ws, { type: "response.create" });
-            return;
-        }
-
-        const query = String(args.query || "").trim();
-        if (!query) {
-            this._send(ws, {
-                type: "conversation.item.create",
-                item: {
-                    type: "function_call_output",
-                    call_id: callId,
-                    output: JSON.stringify({ error: "empty query" }),
-                },
-            });
-            this._send(ws, { type: "response.create" });
-            return;
-        }
-
         const mode = args.mode === "provisional" ? "provisional" : "final";
         const topK = Number.isInteger(args.topK) ? args.topK : 2;
         const threshold =
@@ -592,25 +592,69 @@ class LLMService extends EventEmitter {
         const opt =
             mode === "provisional"
                 ? {
-                      topK: Math.min(topK, 1),
-                      threshold: Math.max(threshold, 0.4),
-                      maxChars: 120,
-                  }
+                    topK: Math.min(topK, 1),
+                    threshold: Math.max(threshold, 0.4),
+                    maxChars: 120,
+                }
                 : { topK, threshold, maxChars: 200 };
 
+        const isQueryEmpty = (query) => {
+            query = String(args.query || "").trim();
+            if (!query) {
+                this._send(ws, {
+                    type: "conversation.item.create",
+                    item: {
+                        type: "function_call_output",
+                        call_id: callId,
+                        output: JSON.stringify({ error: "empty query" }),
+                    },
+                });
+                this._send(ws, { type: "response.create" });
+                return true;
+            }
+            return false
+        };
+        
         let results;
-        if (name === "district_office_search") {
-            // 사용자 위치 정보 가져오기
-            const userCoord =
-                this.socketHandler?.sessions?.get(sessionId)?.coord;
-            results = await ragService.searchDistrictOffice(
-                query,
-                userCoord,
-                opt
-            );
-        } else if (name === "faq_search") {
-            results = await ragService.searchFAQ(query, opt);
-        }
+        switch (name) {
+            case "district_office_search": {
+                if (isQueryEmpty(query)) return;
+                const userCoord =
+                    this.socketHandler?.sessions?.get(sessionId)?.coord;
+                results = await ragService.searchDistrictOffice(
+                    query,
+                    userCoord,
+                    opt
+                );
+                break;
+            };
+
+            case "searchCoolingCentre": {
+                const userCoord =
+                    this.socketHandler?.sessions?.get(sessionId)?.coord;
+                results = await ragService.searchDistrictOffice(
+                    userCoord,
+                    opt
+                );
+                break;
+            };
+
+            case "faq_search":
+                if (isQueryEmpty(query)) return;
+                results = await ragService.searchFAQ(query, opt);
+                break;
+            
+            default:
+                this._send(ws, {
+                    type: "conversation.item.create",
+                    item: {
+                    type: "function_call_output",
+                    call_id: callId,
+                    output: JSON.stringify({ error: "unknown tool" }),
+                    },
+                });
+                this._send(ws, { type: "response.create" });
+        };
 
         // 신뢰도 체크 - 결과가 없거나 가장 높은 점수가 threshold보다 낮으면 저신뢰도 메시지 반환
         if (results.length === 0 || (results[0]?.score || 0) < threshold) {
