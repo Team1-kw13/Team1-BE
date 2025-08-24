@@ -747,11 +747,32 @@ class LLMService extends EventEmitter {
                 }
             }
         }
+         // 동사무소 이름 추출
+        let officeName = null;
+        const namePatterns = [
+            /([가-힣]+(?:동사무소|주민센터|행정복지센터|구청))/g,
+            /(?:기관명|센터명|명칭)[:\s]*([가-힣\s]+(?:동사무소|주민센터|행정복지센터|구청))/g,
+        ];
+
+        for (const pattern of namePatterns) {
+            const matches = [...content.matchAll(pattern)];
+            if (matches.length > 0) {
+                if (pattern === namePatterns[1]) {
+                    // 키워드 뒤의 이름
+                    officeName = matches[0][1].trim();
+                } else {
+                    // 직접 매치된 이름
+                    officeName = matches[0][1].trim();
+                }
+                break;
+            }
+        }
 
         // 전화번호나 위치 정보가 있으면 이벤트 발행
-        if (tel || pos) {
+        if (tel || pos || officeName) {
             const officeInfo = {
                 sessionId,
+                name: officeName || "정보없음",
                 tel: tel || "정보없음",
                 pos: pos || [0, 0],
             };
