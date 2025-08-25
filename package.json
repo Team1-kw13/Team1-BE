@@ -1,40 +1,41 @@
 {
-    "name": "team1-be",
-    "version": "1.0.0",
-    "description": "",
-    "main": "index.js",
-    "scripts": {
-        "start": "pm2-runtime start ecosystem.simple.config.js",
-        "dev": "pm2 start ecosystem.simple.config.js --watch"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/Team1-kw13/Team1-BE.git"
-    },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "type": "commonjs",
-    "bugs": {
-        "url": "https://github.com/Team1-kw13/Team1-BE/issues"
-    },
-    "homepage": "https://github.com/Team1-kw13/Team1-BE#readme",
-    "dependencies": {
-        "@openai/realtime-api-beta": "github:openai/openai-realtime-api-beta",
-        "axios": "^1.11.0",
-        "child_process": "^1.0.2",
-        "cors": "^2.8.5",
-        "dotenv": "^17.2.1",
-        "express": "^5.1.0",
-        "openai": "^5.12.2",
-        "pm2": "^5.4.2",
-        "puppeteer": "^24.16.2",
-        "swagger-jsdoc": "^6.2.8",
-        "swagger-ui-express": "^5.0.1",
-        "uuid": "^11.1.0",
-        "ws": "^8.18.3"
-    },
-    "devDependencies": {
-        "nodemon": "^3.1.10"
-    }
+  "name": "team1-be",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "pm2-runtime start ecosystem.simple.config.js",
+    "dev": "pm2 start ecosystem.simple.config.js --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Team1-kw13/Team1-BE.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Team1-kw13/Team1-BE/issues"
+  },
+  "homepage": "https://github.com/Team1-kw13/Team1-BE#readme",
+  "dependencies": {
+    "@openai/realtime-api-beta": "github:openai/openai-realtime-api-beta",
+    "axios": "^1.11.0",
+    "child_process": "^1.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "openai": "^5.12.2",
+    "pm2": "^5.4.2",
+    "puppeteer": "^24.16.2",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^11.1.0",
+    "ws": "^8.18.3",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
 }
