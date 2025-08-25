@@ -1,4 +1,4 @@
-const OpenAI = require("openai");
+const openai = require("../config/openai");
 const { z } = require("zod");
 const { zodTextFormat } = require("openai/helpers/zod");
 
@@ -8,7 +8,7 @@ const Suggestions = z.object({
 
 class SuggestionService {
   constructor() {
-    this.client = OpenAI;
+    this.client = openai;
 
     this.model = "gpt-4o-mini";
   }
@@ -32,7 +32,6 @@ class SuggestionService {
         ],
         text: { format: zodTextFormat(Suggestions, "followup_suggestions") },
         temperature: 0.7,
-        max_tokens: 200,
       });
       return response.output_parsed.suggestions;
     } catch (err) {
