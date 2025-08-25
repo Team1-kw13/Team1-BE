@@ -440,45 +440,6 @@ class LLMService extends EventEmitter {
           break;
 
         // 텍스트/오디오 응답 스트림
-        case "response.text.delta": {
-          // 세션별 텍스트 누적
-          const meta = this.meta.get(sessionId) || {};
-          meta.accumulatedText = (meta.accumulatedText || "") + data.delta;
-          this.meta.set(sessionId, meta);
-          // 일반 대화 응답
-          this._emit("text_delta", {
-            sessionId,
-            delta: data.delta,
-            // output_index: data.output_index,
-          });
-          break;
-        }
-
-        case "response.text.done":
-          {
-            // 누적된 텍스트를 대화 내역에 추가
-            const metaDone = this.meta.get(sessionId) || {};
-            if (metaDone.accumulatedText) {
-              if (!this.conversations.has(sessionId)) {
-                this.conversations.set(sessionId, []);
-              }
-              this.conversations.get(sessionId).push({
-                role: "assistant",
-                content: metaDone.accumulatedText,
-                timestamp: Date.now(),
-              });
-            }
-          }
-          // 누적된 텍스트 초기화
-          delete metaDone.accumulatedText;
-          this.meta.set(sessionId, metaDone);
-
-          this._emit("text_done", {
-            sessionId,
-            // output_index: data.output_index,
-          });
-          break;
-
         case "response.audio.delta":
           this._emit("audio_delta", {
             sessionId,
