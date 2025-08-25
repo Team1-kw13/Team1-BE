@@ -172,7 +172,6 @@ class Socket {
     const { type } = msg;
 
     if (type === "input_audio_buffer.commit") {
-      console.log(10);
       try {
         llmService.clearAudioBuffer(sessionId);
       } catch {}
