@@ -172,6 +172,7 @@ class Socket {
     const { type } = msg;
 
     if (type === "input_audio_buffer.commit") {
+      console.log(10);
       try {
         llmService.clearAudioBuffer(sessionId);
       } catch {}
@@ -189,9 +190,7 @@ class Socket {
 
     if (type === "input_audio_buffer.end") {
       try {
-        llmService.commitAudioAndCreateResponse(sessionId, {
-          modalities: ["text", "audio"],
-        });
+        llmService.commitAudio(sessionId);
       } catch (e) {
         return this._sendError(ws, 500, `Commit failed: ${e.message}`);
       }

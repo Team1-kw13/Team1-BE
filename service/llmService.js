@@ -381,15 +381,13 @@ class LLMService extends EventEmitter {
       audio: base64Pcm16Chunk,
     });
   }
-  commitAudioAndCreateResponse(
-    sessionId,
-    { modalities = ["text", "audio"] } = {}
-  ) {
+  commitAudio(sessionId) {
     const ws = this._needWs(sessionId);
+    console.log(0);
     this._send(ws, { type: "input_audio_buffer.commit" });
-    this._send(ws, { type: "response.create", response: { modalities } });
   }
   clearAudioBuffer(sessionId) {
+    console.log(9);
     const ws = this._needWs(sessionId);
     this._send(ws, { type: "input_audio_buffer.clear" });
   }
@@ -432,6 +430,11 @@ class LLMService extends EventEmitter {
             sessionId,
             itemId: data.item_id,
             // output_index: data.output_index,
+          });
+          console.log(1);
+          this._send(ws, {
+            type: "response.create",
+            response: { modalities: ["text", "audio"] },
           });
           break;
 
