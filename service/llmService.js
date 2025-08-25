@@ -184,7 +184,7 @@ class LLMService extends EventEmitter {
             type: "function",
             name: "district_office_search",
             description:
-              "동사무소, 주민센터, 구청, 행정복지센터와 관련된 모든 질문에 답변합니다. 전화번호, 주소, 위치, 업무시간, 민원업무, 증명서 발급 등 행정기관 정보를 검색할 때 사용하세요. 예: '노원구 동사무소', '주민센터 전화번호', '구청 위치', '민원 처리' 등",
+              "동사무소, 주민센터, 구청, 행정복지센터 관련 질문이거나 이런 기관에서 처리하는 업무에 대한 질문이면 반드시 이 함수를 호출하세요. 사용자의 질문이나 LLM의 이전 답변에 다음 키워드가 포함되어 있으면 호출: 동사무소, 주민센터, 구청, 행정복지센터, 동주민센터, 행정센터, 읍면동사무소, 시청, 군청, 민원24, 민원처리, 증명서발급, 주민등록, 등본, 초본, 가족관계증명서, 인감증명, 인감등록, 전입신고, 이사신고, 출생신고, 혼인신고, 사망신고, 복지혜택신청, 기초생활수급, 의료급여, 장애인등록, 노인복지, 아동수당. 예: '주민센터에서 발급받으세요' → 주민센터 정보 검색, '동사무소 전화번호', '등본 발급 어디서?'",
             parameters: {
               type: "object",
               properties: {
@@ -830,26 +830,39 @@ class LLMService extends EventEmitter {
     const bestResult = results[0];
     const content = bestResult.content || "";
 
-    // 전화번호 추출 - 더 포괄적인 패턴들
-    const phonePatterns = [
-      /(?:전화|TEL|Tel|연락처|☎|문의)[:\s]*([0-9-\s()]+)/gi,
-      /([0-9]{2,3})-([0-9]{3,4})-([0-9]{4})/g,
-      /([0-9]{3})-([0-9]{4})-([0-9]{4})/g,
-      /(\d{2,3})\s*-\s*(\d{3,4})\s*-\s*(\d{4})/g,
-    ];
-
+    // 전화번호 추출 - JSON 형식 우선, 다른 패턴들도 지원
     let tel = null;
-    for (const pattern of phonePatterns) {
-      const matches = [...content.matchAll(pattern)];
-      if (matches.length > 0) {
-        if (pattern === phonePatterns[0]) {
-          // 첫 번째 패턴: 키워드 뒤의 번호
-          tel = matches[0][1].replace(/[^\d-]/g, "").trim();
-        } else {
-          // 나머지 패턴: 전체 매치
-          tel = matches[0][0].replace(/[^\d-]/g, "").trim();
+
+    // 1. JSON phone 필드 파싱 (우선순위 1)
+    try {
+      const phoneJsonRegex = /"phone"\s*:\s*"([0-9-\s()]+)"/gi;
+      const phoneJsonMatch = content.match(phoneJsonRegex);
+      if (phoneJsonMatch) {
+        tel = phoneJsonMatch[0].match(/"phone"\s*:\s*"([^"]+)"/i)?.[1]?.trim();
+      }
+    } catch (e) {}
+
+    // 2. 키워드 기반 패턴들 (fallback)
+    if (!tel) {
+      const phonePatterns = [
+        /(?:전화|TEL|Tel|연락처|☎|문의)[:\s]*([0-9-\s()]+)/gi,
+        /([0-9]{2,3})-([0-9]{3,4})-([0-9]{4})/g,
+        /([0-9]{3})-([0-9]{4})-([0-9]{4})/g,
+        /(\d{2,3})\s*-\s*(\d{3,4})\s*-\s*(\d{4})/g,
+      ];
+
+      for (const pattern of phonePatterns) {
+        const matches = [...content.matchAll(pattern)];
+        if (matches.length > 0) {
+          if (pattern === phonePatterns[0]) {
+            // 첫 번째 패턴: 키워드 뒤의 번호
+            tel = matches[0][1].replace(/[^\d-]/g, "").trim();
+          } else {
+            // 나머지 패턴: 전체 매치
+            tel = matches[0][0].replace(/[^\d-]/g, "").trim();
+          }
+          break;
         }
-        break;
       }
     }
 
@@ -883,33 +896,75 @@ class LLMService extends EventEmitter {
         }
       }
     }
-    // 동사무소 이름 추출
+    // 동사무소 이름 추출 - JSON 형식 우선, 다른 패턴들도 지원
     let officeName = null;
-    const namePatterns = [
-      /([가-힣]+(?:동사무소|주민센터|행정복지센터|구청))/g,
-      /(?:기관명|센터명|명칭)[:\s]*([가-힣\s]+(?:동사무소|주민센터|행정복지센터|구청))/g,
-    ];
 
-    for (const pattern of namePatterns) {
-      const matches = [...content.matchAll(pattern)];
-      if (matches.length > 0) {
-        if (pattern === namePatterns[1]) {
-          // 키워드 뒤의 이름
-          officeName = matches[0][1].trim();
-        } else {
-          // 직접 매치된 이름
-          officeName = matches[0][1].trim();
+    // 1. JSON name 필드 파싱 (우선순위 1)
+    try {
+      const nameJsonRegex = /"name"\s*:\s*"([^"]+)"/i;
+      const nameJsonMatch = content.match(nameJsonRegex);
+      if (nameJsonMatch) {
+        officeName = nameJsonMatch[1].trim();
+      }
+    } catch (e) {}
+
+    // 2. 키워드 기반 패턴들 (fallback)
+    if (!officeName) {
+      const namePatterns = [
+        /([가-힣]+(?:동사무소|주민센터|행정복지센터|구청))/g,
+        /(?:기관명|센터명|명칭)[:\s]*([가-힣\s]+(?:동사무소|주민센터|행정복지센터|구청))/g,
+      ];
+
+      for (const pattern of namePatterns) {
+        const matches = [...content.matchAll(pattern)];
+        if (matches.length > 0) {
+          if (pattern === namePatterns[1]) {
+            // 키워드 뒤의 이름
+            officeName = matches[0][1].trim();
+          } else {
+            // 직접 매치된 이름
+            officeName = matches[0][1].trim();
+          }
+          break;
         }
-        break;
+      }
+    }
+
+    // 주소 추출 - JSON 형식 우선
+    let address = null;
+
+    // 1. JSON address 필드 파싱 (우선순위 1)
+    try {
+      const addressJsonRegex = /"address"\s*:\s*"([^"]+)"/i;
+      const addressJsonMatch = content.match(addressJsonRegex);
+      if (addressJsonMatch) {
+        address = addressJsonMatch[1].trim();
+      }
+    } catch (e) {}
+
+    // 2. 키워드 기반 패턴 (fallback)
+    if (!address) {
+      const addressPatterns = [
+        /(?:주소|위치|소재지)[:\s]*([가-힣0-9\s-]+(?:구|동|로|길)\s*[0-9]*)/gi,
+        /(서울특별시[^,\n]+)/gi,
+      ];
+
+      for (const pattern of addressPatterns) {
+        const matches = [...content.matchAll(pattern)];
+        if (matches.length > 0) {
+          address = matches[0][1] ? matches[0][1].trim() : matches[0][0].trim();
+          break;
+        }
       }
     }
 
     // 전화번호나 위치 정보가 있으면 이벤트 발행
-    if (tel || pos || officeName) {
+    if (tel || pos || officeName || address) {
       const officeInfo = {
         sessionId,
         name: officeName || "정보없음",
         tel: tel || "정보없음",
+        address: address || "정보없음",
         pos: pos || [0, 0],
       };
 
