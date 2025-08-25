@@ -17,11 +17,8 @@ class LLMService extends EventEmitter {
     this.meta = new Map(); // sessionId -> { createdAt, lastPing }
     this.conversations = new Map(); // sessionId -> [{ role, content, timestamp }]
     this.socketHandler = null;
-    this.ragCache = new Map(); // sessionId -> { query, ragContext, sources, ts }
 
-    this.maxRagChars = 1200;
     this.keepaliveMs = 20_000;
-    this.ragCacheMs = 5 * 60_000;
 
     this.fcalls = new Map(); // sessionId -> Map(call_id -> { name, args })
     this.lastToolAt = new Map(); // sessionId -> ts
@@ -281,7 +278,6 @@ class LLMService extends EventEmitter {
       this.lastToolAt.delete(sessionId);
       this.lowConfidenceCount.delete(sessionId);
       this.conversations.delete(sessionId);
-      this.ragCache.delete(sessionId);
     }
   }
 
@@ -440,45 +436,6 @@ class LLMService extends EventEmitter {
           break;
 
         // 텍스트/오디오 응답 스트림
-        case "response.text.delta": {
-          // 세션별 텍스트 누적
-          const meta = this.meta.get(sessionId) || {};
-          meta.accumulatedText = (meta.accumulatedText || "") + data.delta;
-          this.meta.set(sessionId, meta);
-          // 일반 대화 응답
-          this._emit("text_delta", {
-            sessionId,
-            delta: data.delta,
-            // output_index: data.output_index,
-          });
-          break;
-        }
-
-        case "response.text.done":
-          {
-            // 누적된 텍스트를 대화 내역에 추가
-            const metaDone = this.meta.get(sessionId) || {};
-            if (metaDone.accumulatedText) {
-              if (!this.conversations.has(sessionId)) {
-                this.conversations.set(sessionId, []);
-              }
-              this.conversations.get(sessionId).push({
-                role: "assistant",
-                content: metaDone.accumulatedText,
-                timestamp: Date.now(),
-              });
-            }
-          }
-          // 누적된 텍스트 초기화
-          delete metaDone.accumulatedText;
-          this.meta.set(sessionId, metaDone);
-
-          this._emit("text_done", {
-            sessionId,
-            // output_index: data.output_index,
-          });
-          break;
-
         case "response.audio.delta":
           this._emit("audio_delta", {
             sessionId,
@@ -975,11 +932,6 @@ class LLMService extends EventEmitter {
   _emit(event, payload) {
     super.emit(event, payload);
     if (this.socketHandler?.emit) this.socketHandler.emit(event, payload);
-  }
-
-  _truncate(s, max = this.maxRagChars) {
-    if (!s) return s;
-    return s.length > max ? s.slice(0, max) + "...(truncated)" : s;
   }
 
   _normalize(q) {

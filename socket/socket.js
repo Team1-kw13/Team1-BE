@@ -352,22 +352,6 @@ class Socket {
       ws._llmHandlers.push({ event, handler });
     };
 
-    // text
-    fwd("text_delta", ({ delta }) => {
-      return {
-        type: "response.text.delta",
-        output_index: this._getTurnCount(sessionId),
-        delta,
-      };
-    });
-
-    fwd("text_done", () => {
-      return {
-        type: "response.text.done",
-        output_index: this._getTurnCount(sessionId),
-      };
-    });
-
     fwd("response_done", () => {
       this._generateSuggestionsAfterResponse(ws, sessionId);
 
