@@ -1,11 +1,14 @@
-require("dotenv").config();
 const OpenAI = require("openai");
+const { z } = require("zod");
+const { zodTextFormat } = require("openai/helpers/zod");
+
+const Suggestions = z.object({
+  suggestions: z.array(z.string()).length(2),
+});
 
 class SuggestionService {
   constructor() {
-    this.client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    this.client = OpenAI;
 
     this.model = "gpt-4o-mini";
   }
@@ -14,9 +17,9 @@ class SuggestionService {
     const prompt = this._buildPrompt(context);
 
     try {
-      const response = await this.client.chat.completions.create({
+      const response = await this.client.responses.parse({
         model: this.model,
-        messages: [
+        input: [
           {
             role: "system",
             content:
@@ -27,18 +30,16 @@ class SuggestionService {
             content: prompt,
           },
         ],
+        text: { format: zodTextFormat(Suggestions, "followup_suggestions") },
         temperature: 0.7,
         max_tokens: 200,
       });
-
-      const text = response.choices[0].message.content;
-      return this._parseSuggestions(text);
+      return response.output_parsed.suggestions;
     } catch (err) {
       console.error("제안 질문 생성 실패:", err.message);
       return [
-        "더 자세한 정보가 필요해요",
-        "다른 방법도 있나요?",
-        "언제까지 가능한가요?",
+        "온라인으로 신청 가능한지 알려줘",
+        "수수료랑 처리 기간이 얼마나 걸리는지 말해줘",
       ];
     }
   }
@@ -68,20 +69,6 @@ class SuggestionService {
 1. ...
 2. ...
 `;
-  }
-
-  _parseSuggestions(text) {
-    const lines = text.split("\n").map((l) => l.trim());
-    const suggestions = [];
-    for (const line of lines) {
-      const match = line.match(/^\d+\.\s*(.+)$/);
-      if (match) suggestions.push(match[1]);
-    }
-    while (suggestions.length < 2) {
-      const defaults = ["더 자세한 정보가 필요해요", "다른 방법도 있나요?"];
-      suggestions.push(defaults[suggestions.length]);
-    }
-    return suggestions.slice(0, 3);
   }
 }
 
