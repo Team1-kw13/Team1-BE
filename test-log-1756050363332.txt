@@ -1,0 +1,216 @@
+[2025-08-24T15:46:03.370Z] WebSocket 연결됨
+[2025-08-24T15:46:05.373Z] preprompt 테스트 시작...
+[2025-08-24T15:46:05.374Z] 전송할 메시지: {
+  "channel": "openai:conversation",
+  "type": "preprompted",
+  "enum": "무더위 쉼터"
+}
+[2025-08-24T15:46:06.106Z] 📨 받은 메시지: {
+  "type": "response.done",
+  "channel": "openai:conversation"
+}
+[2025-08-24T15:46:07.293Z] 📨 받은 메시지: {
+  "type": "suggestion.response",
+  "channel": "sonju:suggestedQuestion"
+}
+[2025-08-24T15:46:07.970Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:07.981Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:07.982Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:07.987Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:07.993Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.296Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.297Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.298Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.298Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.583Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.584Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.584Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.584Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.645Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.646Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.646Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.646Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.646Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.646Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.647Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.647Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.647Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.647Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.903Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.904Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.904Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.905Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.905Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.905Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.905Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.906Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.906Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:08.906Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.186Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.186Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.186Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.186Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.186Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.186Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.187Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.187Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.187Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.213Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.213Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.213Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.214Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.214Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.214Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.214Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.214Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.310Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.311Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.311Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.312Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.312Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.312Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.312Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.313Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.501Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.501Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.501Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.501Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.501Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.501Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.501Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.502Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.502Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.502Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.746Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.747Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.747Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.750Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.751Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.751Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.757Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.758Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.758Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.980Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.985Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.988Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:09.992Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:10.253Z] 🔊 오디오 메시지: response.audio.done
+[2025-08-24T15:46:10.254Z] 🔊 오디오 메시지: response.audio_transcript.done
+[2025-08-24T15:46:10.261Z] 📨 받은 메시지: {
+  "type": "response.done",
+  "channel": "openai:conversation"
+}
+[2025-08-24T15:46:11.287Z] 📨 받은 메시지: {
+  "type": "suggestion.response",
+  "channel": "sonju:suggestedQuestion"
+}
+[2025-08-24T15:46:20.382Z] 두 번째 메시지 전송: {
+  "channel": "openai:conversation",
+  "type": "preprompted",
+  "enum": "동사무소"
+}
+[2025-08-24T15:46:21.432Z] 📨 받은 메시지: {
+  "type": "response.done",
+  "channel": "openai:conversation"
+}
+[2025-08-24T15:46:22.585Z] 📨 받은 메시지: {
+  "type": "suggestion.response",
+  "channel": "sonju:suggestedQuestion"
+}
+[2025-08-24T15:46:22.888Z] 📨 받은 메시지: {
+  "type": "officeInfo",
+  "channel": "sonju:officeInfo"
+}
+[2025-08-24T15:46:23.448Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:23.461Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:23.462Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:23.462Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:23.464Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:23.772Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:23.772Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:23.772Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:23.772Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:23.773Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:23.866Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:23.866Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.138Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.139Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.139Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.139Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.140Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.140Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.140Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.365Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.365Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.366Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.367Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.368Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.368Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.482Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.483Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.483Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.483Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.483Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.483Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.483Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.484Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.681Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.682Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.682Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.682Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.682Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.682Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.754Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.755Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.755Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.755Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.755Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.755Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.755Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.755Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.755Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.756Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:24.975Z] 🔊 오디오 메시지: response.audio.done
+[2025-08-24T15:46:24.975Z] 🔊 오디오 메시지: response.audio_transcript.done
+[2025-08-24T15:46:24.976Z] 📨 받은 메시지: {
+  "type": "response.done",
+  "channel": "openai:conversation"
+}
+[2025-08-24T15:46:26.236Z] 📨 받은 메시지: {
+  "type": "suggestion.response",
+  "channel": "sonju:suggestedQuestion"
+}
+[2025-08-24T15:46:35.378Z] 텍스트 메시지 전송: {
+  "channel": "openai:conversation",
+  "type": "input_text",
+  "text": "안녕하세요, 테스트입니다"
+}
+[2025-08-24T15:46:35.943Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:35.949Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:35.954Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:36.261Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:36.262Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:36.262Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:36.547Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:36.547Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:36.547Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:36.547Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:36.547Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:36.547Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:36.627Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:36.628Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:36.628Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:36.628Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:36.628Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:36.628Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:46:36.876Z] 🔊 오디오 메시지: response.audio.done
+[2025-08-24T15:46:36.876Z] 🔊 오디오 메시지: response.audio_transcript.done
+[2025-08-24T15:46:36.878Z] 📨 받은 메시지: {
+  "type": "response.done",
+  "channel": "openai:conversation"
+}
+[2025-08-24T15:46:37.809Z] 📨 받은 메시지: {
+  "type": "suggestion.response",
+  "channel": "sonju:suggestedQuestion"
+}
+[2025-08-24T15:47:05.379Z] 연결 종료...

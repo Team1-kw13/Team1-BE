@@ -1,0 +1,433 @@
+[2025-08-24T15:43:11.375Z] WebSocket 연결됨
+[2025-08-24T15:43:13.379Z] preprompt 테스트 시작...
+[2025-08-24T15:43:13.379Z] 전송할 메시지: {
+  "channel": "openai:conversation",
+  "type": "preprompted",
+  "enum": "무더위 쉼터"
+}
+[2025-08-24T15:43:14.050Z] 📨 받은 메시지: {
+  "type": "response.done",
+  "channel": "openai:conversation"
+}
+[2025-08-24T15:43:15.299Z] 📨 받은 메시지: {
+  "type": "suggestion.response",
+  "channel": "sonju:suggestedQuestion"
+}
+[2025-08-24T15:43:15.667Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:15.668Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:15.672Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:15.675Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:15.836Z] 바이너리 데이터 수신: 4800 bytes
+[2025-08-24T15:43:15.960Z] 바이너리 데이터 수신: 7200 bytes
+[2025-08-24T15:43:15.983Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:15.983Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:15.984Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:15.984Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:15.985Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.144Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.144Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.144Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.145Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.145Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.145Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.273Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.281Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.282Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.282Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.282Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.282Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.282Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.282Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.282Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.282Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.282Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.287Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.342Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.444Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.584Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.586Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.587Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.588Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.588Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.589Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.589Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.589Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.589Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.589Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.590Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.590Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.590Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.590Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.591Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.596Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.645Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.752Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.752Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.752Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.756Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.756Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.756Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.756Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.756Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.756Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.756Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.756Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.756Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.756Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.756Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.888Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.889Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.889Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.893Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.894Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.895Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.895Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.896Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.896Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.896Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.896Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.896Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.896Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.897Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.897Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.897Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.897Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.897Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:16.897Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.898Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.901Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.919Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.923Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.955Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:16.980Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.059Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.059Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.059Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.059Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.059Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.059Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.059Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.059Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.066Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.069Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.074Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.080Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.084Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.127Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.171Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.198Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.226Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.246Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.275Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.294Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.324Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.345Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.350Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.351Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.351Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.356Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.364Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.367Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.375Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.416Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.443Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.470Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.489Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.513Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.540Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.567Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.591Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.615Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.615Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.616Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.624Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.628Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.633Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.640Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.647Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.666Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.672Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.713Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.750Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.765Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.790Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.817Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.840Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.867Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.896Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.916Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:17.916Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.919Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.926Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.929Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.935Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.939Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:17.983Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.012Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.039Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.062Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.083Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.108Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.134Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.159Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.182Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.196Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.198Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.205Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.212Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.217Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.220Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.225Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.231Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.275Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.301Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.323Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.352Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.371Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.394Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.418Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.446Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.455Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.458Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.458Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.474Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.474Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.482Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.482Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.482Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.498Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.498Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.499Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.499Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.539Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.560Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.580Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.604Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.628Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.650Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.669Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.693Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.709Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.714Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.730Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.750Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.750Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.750Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.756Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.759Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.762Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.765Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.769Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.775Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.780Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:18.818Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.847Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.889Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.926Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.952Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:18.976Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:19.008Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:19.020Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:19.038Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:19.039Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:19.040Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:19.043Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:19.052Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:19.052Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:19.060Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:19.064Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:19.067Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:19.071Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:19.082Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:19.120Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:19.144Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:19.167Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:19.190Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:19.217Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:19.244Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:19.279Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:19.304Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:19.324Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:19.359Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:19.383Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:19.436Z] 바이너리 데이터 수신: 33600 bytes
+[2025-08-24T15:43:19.451Z] 🔊 오디오 메시지: response.audio.done
+[2025-08-24T15:43:19.460Z] 🔊 오디오 메시지: response.audio_transcript.done
+[2025-08-24T15:43:19.462Z] 📨 받은 메시지: {
+  "type": "response.done",
+  "channel": "openai:conversation"
+}
+[2025-08-24T15:43:21.612Z] 📨 받은 메시지: {
+  "type": "suggestion.response",
+  "channel": "sonju:suggestedQuestion"
+}
+[2025-08-24T15:43:28.384Z] 두 번째 메시지 전송: {
+  "channel": "openai:conversation",
+  "type": "preprompted",
+  "enum": "동사무소"
+}
+[2025-08-24T15:43:29.046Z] 📨 받은 메시지: {
+  "type": "response.done",
+  "channel": "openai:conversation"
+}
+[2025-08-24T15:43:31.110Z] 📨 받은 메시지: {
+  "type": "officeInfo",
+  "channel": "sonju:officeInfo"
+}
+[2025-08-24T15:43:31.187Z] 📨 받은 메시지: {
+  "type": "suggestion.response",
+  "channel": "sonju:suggestedQuestion"
+}
+[2025-08-24T15:43:31.616Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:31.617Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:31.617Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:31.624Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:31.625Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:31.781Z] 바이너리 데이터 수신: 4800 bytes
+[2025-08-24T15:43:31.913Z] 바이너리 데이터 수신: 7200 bytes
+[2025-08-24T15:43:31.933Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:31.933Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:31.933Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:31.933Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.067Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.220Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.221Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.222Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.222Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.223Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.223Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.237Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.237Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.239Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.240Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.243Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.244Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.245Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.245Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.246Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.370Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.385Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.532Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.533Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.533Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.534Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.534Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.535Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.535Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.535Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.535Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.535Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.536Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.536Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.536Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.536Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.537Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.538Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.546Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.673Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.673Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.691Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.692Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.833Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.833Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.834Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.834Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.834Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.834Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.834Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.835Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.835Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.835Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.836Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.836Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.836Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.837Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.837Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.839Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.840Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.841Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.841Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.841Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.841Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.841Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.843Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.844Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.845Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.845Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.853Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.853Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.854Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.855Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.855Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.857Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.861Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.982Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.983Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.983Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.983Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.983Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.984Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.984Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.984Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.985Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.985Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.985Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:32.986Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.986Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:32.989Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.016Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.050Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.077Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.097Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.139Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.153Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.153Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.154Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.155Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.160Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.163Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.168Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.173Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.178Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.183Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.227Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.253Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.272Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.304Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.321Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.343Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.366Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.392Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.422Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.423Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.426Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.427Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.437Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.437Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.437Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.439Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.442Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.446Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.492Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.521Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.536Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.586Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.612Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.674Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.676Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.696Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.719Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.719Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.719Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.726Z] 🔊 오디오 메시지: response.audio_transcript.delta
+[2025-08-24T15:43:33.770Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.791Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.816Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.843Z] 바이너리 데이터 수신: 12000 bytes
+[2025-08-24T15:43:33.885Z] 바이너리 데이터 수신: 31200 bytes
+[2025-08-24T15:43:33.910Z] 🔊 오디오 메시지: response.audio.done
+[2025-08-24T15:43:33.910Z] 🔊 오디오 메시지: response.audio_transcript.done
+[2025-08-24T15:43:33.910Z] 📨 받은 메시지: {
+  "type": "response.done",
+  "channel": "openai:conversation"
+}

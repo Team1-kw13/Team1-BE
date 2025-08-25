@@ -99,12 +99,21 @@ class SummaryService {
     const html = this._generateReportHTML(summaryResult, parsed, { theme });
 
     // 4. 이미지 생성 (Puppeteer 사용)
-    let imageBuffer = null;
+    let image = null;
     if (format === "image" || format === "both") {
-      imageBuffer = await this._htmlToImageWithPuppeteer(html, {
-        width: 800,
-        height: 1200,
-      });
+      const { buffer, formatUsed } = await this._htmlToImageWithPuppeteer(
+        html,
+        {
+          width: 800,
+          height: 1200,
+          format: "png",
+        }
+      );
+      image = {
+        data: buffer.toString("base64"),
+        encoding: "base64",
+        mimeType: formatUsed === "jpeg" ? "image/jpeg" : "image/png",
+      };
     }
 
     const result = {
@@ -119,12 +128,7 @@ class SummaryService {
     }
 
     if (format === "image" || format === "both") {
-      result.image = imageBuffer
-        ? {
-            data: imageBuffer,
-            format: "png",
-          }
-        : null;
+      result.image = image || null;
     }
 
     return result;
@@ -157,6 +161,7 @@ class SummaryService {
       // 폰트 로딩 대기 (최소한)
       await new Promise((resolve) => setTimeout(resolve, 200));
 
+      let outputFormat = format;
       let imageBuffer = await page.screenshot({
         type: format,
         quality: format === "jpeg" ? quality : undefined,
@@ -172,6 +177,7 @@ class SummaryService {
             quality: Math.max(60, quality - 20), // 품질 조정
             fullPage: true,
           });
+          outputFormat = "jpeg";
         }
 
         // 여전히 크면 크기 축소
@@ -191,10 +197,11 @@ class SummaryService {
             quality: 60,
             fullPage: true,
           });
+          outputFormat = "jpeg";
         }
       }
 
-      return imageBuffer;
+      return { buffer: imageBuffer, formatUsed: outputFormat };
     } finally {
       await page.close();
     }
