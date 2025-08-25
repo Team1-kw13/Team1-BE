@@ -1,8 +1,6 @@
 const express = require("express");
 const http = require("http");
-const path = require("path");
 require("dotenv").config();
-const { swaggerUi, specs } = require("./config/swagger");
 const corsMiddleware = require("./config/cors");
 const Socket = require("./socket/socket");
 
@@ -10,7 +8,6 @@ const app = express();
 const server = http.createServer(app);
 const PORT = 3000;
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 app.use(corsMiddleware);
 
 app.get("/", (req, res) => {
