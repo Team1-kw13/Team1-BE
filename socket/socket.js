@@ -300,7 +300,6 @@ class Socket {
           (msg) => `${msg.role === "user" ? "사용자" : "AI"}: ${msg.content}`
         )
         .join("\n");
-      console.log(context);
       const suggestions = await suggestionService.generate(context);
 
       if (ws.readyState === ws.OPEN) {
@@ -413,10 +412,6 @@ class Socket {
     fwd("input_audio_transcript_delta", ({ delta, itemId }) => {
       // 사용자 음성 전사 누적
       this._accumUserTranscript(sessionId, delta);
-
-      console.log(delta);
-      console.log(itemId);
-      console.log(this._getTurnIdx(sessionId, itemId));
       return {
         type: "input_audio_transcription.delta",
         output_index: this._getTurnIdx(sessionId, itemId),

@@ -280,6 +280,8 @@ class LLMService extends EventEmitter {
       this.fcalls.delete(sessionId);
       this.lastToolAt.delete(sessionId);
       this.lowConfidenceCount.delete(sessionId);
+      this.conversations.delete(sessionId);
+      this.ragCache.delete(sessionId);
     }
   }
 
@@ -438,7 +440,7 @@ class LLMService extends EventEmitter {
           break;
 
         // 텍스트/오디오 응답 스트림
-        case "response.text.delta":
+        case "response.text.delta": {
           // 세션별 텍스트 누적
           const meta = this.meta.get(sessionId) || {};
           meta.accumulatedText = (meta.accumulatedText || "") + data.delta;
@@ -450,21 +452,23 @@ class LLMService extends EventEmitter {
             // output_index: data.output_index,
           });
           break;
+        }
 
         case "response.text.done":
-          // 누적된 텍스트를 대화 내역에 추가
-          const metaDone = this.meta.get(sessionId) || {};
-          if (metaDone.accumulatedText) {
-            if (!this.conversations.has(sessionId)) {
-              this.conversations.set(sessionId, []);
+          {
+            // 누적된 텍스트를 대화 내역에 추가
+            const metaDone = this.meta.get(sessionId) || {};
+            if (metaDone.accumulatedText) {
+              if (!this.conversations.has(sessionId)) {
+                this.conversations.set(sessionId, []);
+              }
+              this.conversations.get(sessionId).push({
+                role: "assistant",
+                content: metaDone.accumulatedText,
+                timestamp: Date.now(),
+              });
             }
-            this.conversations.get(sessionId).push({
-              role: "assistant",
-              content: metaDone.accumulatedText,
-              timestamp: Date.now(),
-            });
           }
-
           // 누적된 텍스트 초기화
           delete metaDone.accumulatedText;
           this.meta.set(sessionId, metaDone);
@@ -516,7 +520,6 @@ class LLMService extends EventEmitter {
           break;
 
         case "response.audio_transcript.delta":
-          q;
           // 오디오 전사 텍스트 누적 (실제 응답 텍스트)
           const metaTranscript = this.meta.get(sessionId) || {};
           metaTranscript.accumulatedText =
