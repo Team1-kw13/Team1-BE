@@ -17,11 +17,8 @@ class LLMService extends EventEmitter {
     this.meta = new Map(); // sessionId -> { createdAt, lastPing }
     this.conversations = new Map(); // sessionId -> [{ role, content, timestamp }]
     this.socketHandler = null;
-    this.ragCache = new Map(); // sessionId -> { query, ragContext, sources, ts }
 
-    this.maxRagChars = 1200;
     this.keepaliveMs = 20_000;
-    this.ragCacheMs = 5 * 60_000;
 
     this.fcalls = new Map(); // sessionId -> Map(call_id -> { name, args })
     this.lastToolAt = new Map(); // sessionId -> ts
@@ -281,7 +278,6 @@ class LLMService extends EventEmitter {
       this.lastToolAt.delete(sessionId);
       this.lowConfidenceCount.delete(sessionId);
       this.conversations.delete(sessionId);
-      this.ragCache.delete(sessionId);
     }
   }
 
@@ -936,11 +932,6 @@ class LLMService extends EventEmitter {
   _emit(event, payload) {
     super.emit(event, payload);
     if (this.socketHandler?.emit) this.socketHandler.emit(event, payload);
-  }
-
-  _truncate(s, max = this.maxRagChars) {
-    if (!s) return s;
-    return s.length > max ? s.slice(0, max) + "...(truncated)" : s;
   }
 
   _normalize(q) {
